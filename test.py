@@ -70,19 +70,19 @@ for test in tests:
     else:
         wantJSON = json.dumps(want, indent=2, sort_keys=True) + "\n"
 
-    diff = difflib.unified_diff(wantJSON.splitlines(1), gotJSON.splitlines(1), "expected.out", "actual.out")
+        diff = difflib.unified_diff(wantJSON.splitlines(1), gotJSON.splitlines(1), "expected.out", "actual.out")
 
-    # diff does poorly when newlines are ommitted, let's fix that
-    diff = [l if len(l) > 0 and l[-1] == '\n' else l + "\n" for l in diff]
-    diffText = '    '.join(diff)
+        # diff does poorly when newlines are ommitted, let's fix that
+        diff = [l if len(l) > 0 and l[-1] == '\n' else l + "\n" for l in diff]
+        diffText = '    '.join(diff)
 
-    if len(diffText):
-        diffText = '    ' + diffText
-        print "  FAILED: actual output doesn't match expected:"
-        print diffText
-        failed = True
-    else:
-        print "  ... passed."
+        if len(diffText):
+            diffText = '    ' + diffText
+            print "  FAILED: actual output doesn't match expected:"
+            print diffText
+            failed = True
+        else:
+            print "  ... passed."
 
     if failed:
         failedTests += 1
