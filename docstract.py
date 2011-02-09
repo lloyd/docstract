@@ -64,6 +64,7 @@ class DocStract():
         self.functionMarker = "@function"
         self.moduleMarker = "@module"
         self.paramMarker = "@param"
+        self.paramsMarker = "@params"
         self.propertyMarker = "@property"
         self.returnsMarker = "@returns"
         self.returnMarker = "@return"
@@ -78,6 +79,7 @@ class DocStract():
             self.functionMarker,
             self.moduleMarker,
             self.paramMarker,
+            self.paramsMarker,
             self.propertyMarker,
             self.returnsMarker,
             self.returnMarker,
@@ -233,7 +235,7 @@ class DocStract():
             else:
                 # XXX: should this really be fatal?
                 raise RuntimeError("@type without any content encountered")
-        elif cur == self.paramMarker:
+        elif cur in ( self.paramMarker, self.paramsMarker ):
             nxt = self._popNonMarker(tokens)
             if nxt:
                 # nxt now describes the param
