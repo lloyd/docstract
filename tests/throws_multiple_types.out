@@ -1,0 +1,25 @@
+{
+  "desc": "a module with a function thats really throwey.", 
+  "filename": "tests/throws_multiple_types.js", 
+  "functions": [
+    {
+      "name": "throweyFunc", 
+      "throws": [
+        {
+          "desc": "When you are sleeping"
+        }, 
+        {
+          "desc": "When you're awake"
+        }, 
+        {
+          "desc": "if you've been bad or good.", 
+          "type": "object"
+        }, 
+        {
+          "desc": "So be good for goodness sake."
+        }
+      ]
+    }
+  ], 
+  "module": "throws_multiple_types"
+}

@@ -1,0 +1,15 @@
+{
+  "desc": "when defining the @type of a property, you chose to omit braces", 
+  "filename": "tests/type_optional_braces.js", 
+  "module": "type_optional_braces", 
+  "properties": [
+    {
+      "name": "foo", 
+      "type": "string"
+    }, 
+    {
+      "name": "bar", 
+      "type": "string"
+    }
+  ]
+}

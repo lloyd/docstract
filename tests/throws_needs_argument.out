@@ -1,0 +1,6 @@
+{
+  "args": [
+    "@throws tag requires an argument"
+  ], 
+  "exception_type": "<type 'exceptions.RuntimeError'>"
+}

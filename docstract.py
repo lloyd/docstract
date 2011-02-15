@@ -47,12 +47,6 @@ class DocStract():
             '(?:^([\w.\[\]]+)?\s*(.*)$)',
             re.S);
 
-        # parse returns clause (also works for @throws!)
-        # @return [{type}] [description]
-        #   or
-        # @throws [{type}] [description]
-        self.returnPat = re.compile('^\s*(?:{(\w+)})?\s*(.*)$', re.S);
-
         # heuristic type and name guessing stuff, applied to the first non-whitespace
         # line after the doc block.  designed for commonjs modules (note the 'exports').
         self.findExportsPat = re.compile('(?:^|\s)exports\.(\w+)\s', re.M);
@@ -61,32 +55,37 @@ class DocStract():
         self.classMarker = "@class"
         self.classEndMarker = "@endclass"
         self.constructorMarker = "@constructor"
-        self.descriptionMarker = "@description"
         self.functionMarker = "@function"
         self.moduleMarker = "@module"
-        self.paramMarker = "@param"
-        self.paramsMarker = "@params"
         self.propertyMarker = "@property"
-        self.returnsMarker = "@returns"
-        self.returnMarker = "@return"
-        self.throwsMarker = "@throws"
-        self.typeMarker = "@type"
 
-        self.markers = (
+        # block types.  Each document block is of one of these types.
+        # XXX: this should become an array of classes, like self.tags 
+        self.blockTypes = (
             self.classMarker,
             self.classEndMarker,
             self.constructorMarker,
-            self.descriptionMarker,
             self.functionMarker,
             self.moduleMarker,
-            self.paramMarker,
-            self.paramsMarker,
-            self.propertyMarker,
-            self.returnsMarker,
-            self.returnMarker,
-            self.throwsMarker,
-            self.typeMarker
+            self.propertyMarker
             )
+
+        # tag aliases, direct equivalences.  Note, RHS is normal form.
+        self.aliases = {
+            '@params': '@param',
+            '@returns': '@return',
+            '@description': '@desc'
+            }
+
+        # lookup table of tag handlers, lil' object that can parse and inject
+        # for different tags.
+        self.tags = {
+            '@param': self.ParamTagHandler('@param'),
+            '@desc': self.DescTagHandler('@desc'),
+            '@return': self.ReturnTagHandler('@return'),
+            '@throws': self.ThrowsTagHandler('@throws'),
+            '@type': self.TypeTagHandler('@type'),
+            }
 
         # a little bit of context that allows us to understand when we're parsing classes
         # XXX: we could make this an array and a couple code tweaks if we cared
@@ -94,10 +93,12 @@ class DocStract():
         self._currentClass = None
 
     def _isMarker(self, tok):
-        return tok in self.markers
+        return tok in self.blockTypes or tok in self.tags or tok in self.aliases
 
     def _popNonMarker(self, toks):
         nxt = None
+        if (len(toks) == 0):
+            return None
         if not self._isMarker(self._peekTok(toks)):
             nxt = toks.pop(0)
         return nxt
@@ -110,9 +111,7 @@ class DocStract():
     def _consumeToks(self, tokens, currentObj, data):
         cur = tokens.pop(0)
 
-        if not self._isMarker(cur):
-            raise RuntimeError("Found text where marker was expected: %s" % (cur[:20] + "..."))
-        elif cur == self.moduleMarker:
+        if cur == self.moduleMarker:
             currentObj["type"] = 'module'
             nxt = self._popNonMarker(tokens)
             if nxt:
@@ -219,94 +218,22 @@ class DocStract():
             else:
                 # in this case we'll have to guess the function name
                 pass
-        elif cur == self.descriptionMarker:
-            nxt = self._popNonMarker(tokens)
-            if nxt:
-                if 'desc' in currentObj:
-                    currentObj['desc'] = currentObj['desc'] + "\n\n" + nxt
-                else:
-                    currentObj['desc'] = nxt
-            else:
-                # XXX: should this really be fatal?
-                raise RuntimeError("@description without any body encountered")
-        elif cur == self.typeMarker:
-            nxt = self._popNonMarker(tokens)
-
-            if nxt:
-                currentObj['dataType'] = nxt
-            else:
-                # XXX: should this really be fatal?
-                raise RuntimeError("@type without any content encountered")
-        elif cur in ( self.paramMarker, self.paramsMarker ):
-            nxt = self._popNonMarker(tokens)
-            if nxt:
-                # nxt now describes the param
-                m = self.propPat.match(nxt)
-                if not m:
-                    raise RuntimeError("Malformed args to %s: %s" %
-                                       (cur, (nxt[:20] + "...")))
-                p = { }
-                if m.group(1):
-                    p['name'] = m.group(1)
-                    p['type'] = m.group(2)
-                    if m.group(3):
-                        p['desc'] = m.group(3)
-                elif m.group(4):
-                    p['type'] = m.group(4)
-                    p['name'] = m.group(5)
-                    if m.group(6):
-                        p['desc'] = m.group(6)
-                else:
-                    if m.group(7):
-                        p['name'] = m.group(7)
-                    if m.group(8):
-                        p['desc'] = m.group(8)
-
-                if not 'params' in currentObj:
-                    currentObj['params'] = [ ]
-                currentObj['params'].append(p)
-            else:
-                # in this case we'll have to guess the function name
-                pass
-        elif cur == self.returnsMarker or cur == self.returnMarker:
-            nxt = self._peekTok(tokens)
-            if not self._isMarker(nxt):
-                nxt = tokens.pop(0)
-                m = self.returnPat.match(nxt)
-                if not m:
-                    raise RuntimeError("Malformed args to %s: %s" %
-                                       (cur, (nxt[:20] + "...")))
-                rv = { }
-                if m.group(1):
-                    rv['type'] = m.group(1)
-                rv['desc'] = m.group(2)
-
-                currentObj['returns'] = rv
-            else:
-                # in this case we'll have to guess the function name
-                pass
-        elif cur == self.throwsMarker:
-            nxt = self._peekTok(tokens)
-            if not self._isMarker(nxt):
-                nxt = tokens.pop(0)
-                # yeah, we reuse the return pattern here
-                m = self.returnPat.match(nxt)
-                if not m:
-                    raise RuntimeError("Malformed args to %s: %s" %
-                                       (self.throwsMarker, (nxt[:20] + "...")))
-                t = { }
-                if m.group(1):
-                    t['type'] = m.group(1)
-                t['desc'] = m.group(2)
-
-                if not 'throws' in currentObj:
-                    currentObj['throws'] = [ ]
-                currentObj['throws'].append(t)
-            else:
-                # in this case we'll have to guess the function name
-                pass
         else:
-            raise RuntimeError("unrecognized tag: %s" % cur)
+            # do we have a handler for this type of marker?
+            if (self.tags.has_key(cur)):
+                arg = None
+
+                # get argument if required
+                if self.tags[cur].takesArg:
+                    arg = self._popNonMarker(tokens)
+
+                    if arg == None and not self.tags[cur].argOptional:
+                        raise RuntimeError("%s tag requires an argument" % cur)
+
+                ctx = self.tags[cur].parse(arg)
+                self.tags[cur].attach(ctx, currentObj)
+            else:
+                raise RuntimeError("unrecognized tag: %s" % cur)
 
     def _analyzeContext(self, context):
         guessedName = None
@@ -337,9 +264,11 @@ class DocStract():
         # Step 1: split the chunk of text into a token stream, each token
         # is either a tag /@\w+/ or a chunk of text (tag argument).
         # whitespace on either side of tokens is stripped
-
         tokens = self.tokenizePat.split(block)
         tokens = [n.strip() for n in tokens if n.strip()]
+
+        # Step 1.5: collapse aliases
+        tokens = [self.aliases[n] if self.aliases.has_key(n) else n for n in tokens]
 
         # Step 2: initialize an object which will hold the resultant JSON
         # representation of this content block.
@@ -466,6 +395,125 @@ class DocStract():
             firstBlock = False
 
         return data
+
+    # begin definition of Tag Handler classes.
+
+    # TagHandler is the base class for a handler of tags.  This is an
+    # object that is capable of parsing tags and merging them into
+    # the output JSON document.
+    class TagHandler(object):
+        # if takesArg is true, then text may occur after the tag
+        # (it "accepts" a single text blob as an argument)
+        takesArg = False
+        # if takesArg is True, argOptional specifies whether the
+        # argument is required
+        argOptional = False
+        # if mayRecur is True the tag may be specified multiple times
+        # in a single document text blob.
+        mayRecur = False
+        def __init__(self, tagname):
+            self.tagName = tagname
+
+        # the parse method attempts to parse the text blob and returns
+        # any representation of it that it likes.  This method should throw
+        # if there's a syntactic error in the text argument.  text may be
+        # 'None' if the tag accepts no argument.
+        def parse(self, text):
+            return text
+
+        # attach merges the results of parsing a tag into the output
+        # JSON document for a documentation block. `obj` is the value
+        # returned by parse(), and parent is the json document that
+        # the function should mutate
+        def attach(self, obj, parent):
+            parent[self.tagName[1:]] = obj
+
+    class ParamTagHandler(TagHandler):
+        takesArg = True
+
+        # We support three forms:
+        #   @property <name> <{type}> [description]
+        #   @property <{type}> <name> [description]
+        #   @property [name]
+        #   [description]
+        _pat = re.compile(
+            '(?:^([\w.\[\]]+)\s*(?:{(\w+)})\s*(.*)$)|' +
+            '(?:^{(\w+)}\s*([\w.\[\]]+)\s*(.*)$)|' +
+            '(?:^([\w.\[\]]+)?\s*(.*)$)',
+            re.S);
+
+        def parse(self, text):
+            m = self._pat.match(text)
+            if not m:
+                raise RuntimeError("Malformed args to %s: %s" %
+                                   (tag, (text[:20] + "...")))
+            p = { }
+            if m.group(1):
+                p['name'] = m.group(1)
+                p['type'] = m.group(2)
+                if m.group(3):
+                    p['desc'] = m.group(3)
+            elif m.group(4):
+                p['type'] = m.group(4)
+                p['name'] = m.group(5)
+                if m.group(6):
+                    p['desc'] = m.group(6)
+            else:
+                if m.group(7):
+                    p['name'] = m.group(7)
+                if m.group(8):
+                    p['desc'] = m.group(8)
+            return p
+
+        def attach(self, obj, current):
+            if not 'params' in current:
+                current['params'] = [ ]
+            current['params'].append(obj)
+
+    class DescTagHandler(TagHandler):
+        takesArg = True
+        mayRecur = True
+        def attach(self, obj, current):
+            if 'desc' in current:
+                current['desc'] = current['desc'] + "\n\n" + obj
+            else:
+                current['desc'] = obj
+
+    class ReturnTagHandler(TagHandler):
+        takesArg = True
+        _pat = re.compile('^\s*(?:{(\w+)})?\s*(.*)$', re.S);
+
+        def parse(self, text):
+            m = self._pat.match(text)
+            if not m:
+                raise RuntimeError("Malformed args to %s: %s" %
+                                   (self.tagName, (text[:20] + "...")))
+            rv = { }
+            if m.group(1):
+                rv['type'] = m.group(1)
+            rv['desc'] = m.group(2)
+
+            return rv
+
+        def attach(self, obj, current):
+            current['returns'] = obj
+
+    class ThrowsTagHandler(ReturnTagHandler):
+        def attach(self, obj, current):
+            if 'throws' not in current:
+                current['throws'] = [ ]
+            current['throws'].append(obj)
+
+    class TypeTagHandler(TagHandler):
+        takesArg = True
+        _pat = re.compile('^{?(.*?)}?$')
+
+        def parse(self, text):
+            # strip off { } if present
+            return self._pat.match(text).group(1)
+
+        def attach(self, obj, current):
+            current['dataType'] = obj
 
 if __name__ == '__main__':
     import sys
