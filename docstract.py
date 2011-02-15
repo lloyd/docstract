@@ -72,19 +72,25 @@ class DocStract():
 
         # tag aliases, direct equivalences.  Note, RHS is normal form.
         self.aliases = {
+            '@func': '@function',
             '@params': '@param',
+            '@parameter': '@param',
+            '@parameters': '@param',
             '@returns': '@return',
-            '@description': '@desc'
+            '@description': '@desc',
+            '@seealso': '@see',
+            '@see_also': '@see'
             }
 
         # lookup table of tag handlers, lil' object that can parse and inject
         # for different tags.
         self.tags = {
-            '@param': self.ParamTagHandler('@param'),
-            '@desc': self.DescTagHandler('@desc'),
+            '@param':  self.ParamTagHandler('@param'),
+            '@desc':   self.DescTagHandler('@desc'),
             '@return': self.ReturnTagHandler('@return'),
+            '@see':    self.SeeTagHandler('@see'),
             '@throws': self.ThrowsTagHandler('@throws'),
-            '@type': self.TypeTagHandler('@type'),
+            '@type':   self.TypeTagHandler('@type'),
             }
 
         # a little bit of context that allows us to understand when we're parsing classes
@@ -346,6 +352,8 @@ class DocStract():
                     globalData['desc'] = curObj['desc']
                 if 'name' in curObj:
                     globalData['module'] = curObj['name']
+                if 'see' in curObj:
+                    globalData['see'] = curObj['see']
             else:
                 raise RuntimeError("I don't know what to do with a: %s" % curObj['type'])
 
@@ -469,6 +477,14 @@ class DocStract():
             if not 'params' in current:
                 current['params'] = [ ]
             current['params'].append(obj)
+
+    class SeeTagHandler(TagHandler):
+        takesArg = True
+        mayRecur = True
+        def attach(self, obj, current):
+            if not 'see' in current:
+                current['see'] = [ ]
+            current['see'].append(obj)
 
     class DescTagHandler(TagHandler):
         takesArg = True

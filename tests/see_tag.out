@@ -1,0 +1,21 @@
+{
+  "desc": "The see tag lets you reference other things.\nYou can pass whatever text you want to the see tag.\n\nin the case above, we're passing something that\nlooks like a hashtag.\n\nThose three examples use the forms that jsdoc likes to\neat. But really, it's all up to your rendering code.\nSo go ahead, make a convention, it's fun!", 
+  "filename": "tests/see_tag.js", 
+  "functions": [
+    {
+      "desc": "Now functions too can have see tags.  They can occur\nin almost any type of documentation block.", 
+      "name": "MyFunc", 
+      "see": [
+        "DoYouSeeNow?", 
+        "HowAboutNow?"
+      ]
+    }
+  ], 
+  "module": "see_tag", 
+  "see": [
+    "#module/file/read", 
+    "#methodName", 
+    "#ClassName", 
+    "ClassName#methodName"
+  ]
+}
