@@ -1,0 +1,23 @@
+{
+  "desc": "Description may recur.  lots of times.\n\nHere's a little bit.\n\nHere's a little bit more.\n\nand how bout a final bit of module desc?", 
+  "filename": "tests/description_recurring.js", 
+  "functions": [
+    {
+      "desc": "The function that's documented all over because in functions...\n\n..description can be interspersed...\n\nbetween other tags!", 
+      "name": "foo", 
+      "params": [
+        {
+          "desc": "An AWESOME param.", 
+          "name": "bar", 
+          "type": "string"
+        }, 
+        {
+          "desc": "Another AWESOME param.", 
+          "name": "baz", 
+          "type": "string"
+        }
+      ]
+    }
+  ], 
+  "module": "description_recurring"
+}
