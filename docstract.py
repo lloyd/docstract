@@ -28,7 +28,7 @@ class DocStract():
         # the pattern used to split a comment block to create our token stream
         # this will currently break if there are ampersands in the comments if there
         # is a space before it
-        self.tokenizePat = re.compile('^\s?(@\w\w*)', re.M);
+        self.tokenizePat = re.compile('^\s?(@\w+)', re.M);
 
         # parse a function/module/class:
         # @function [name]
@@ -57,6 +57,7 @@ class DocStract():
         # line after the doc block.  designed for commonjs modules (note the 'exports').
         self.findExportsPat = re.compile('(?:^|\s)exports\.(\w+)\s', re.M);
 
+        # tags that are allowed inside documentation blocks.
         self.classMarker = "@class"
         self.classEndMarker = "@endclass"
         self.constructorMarker = "@constructor"
@@ -230,6 +231,7 @@ class DocStract():
                 raise RuntimeError("@description without any body encountered")
         elif cur == self.typeMarker:
             nxt = self._popNonMarker(tokens)
+
             if nxt:
                 currentObj['dataType'] = nxt
             else:
@@ -322,6 +324,9 @@ class DocStract():
         return guessedName, guessedType
 
     def _analyzeBlock(self, block, context, firstBlock, data):
+        # Ye' ol' block analysis process.  block at this point contains
+        # a chunk of text that has already had comment markers stripped out.
+
         # when we're parsing classes, we'll modify the classes nested
         # data structure rather than the global data structure for
         # this module
@@ -329,15 +334,20 @@ class DocStract():
         if not self._currentClass == None:
             data = data['classes'][self._currentClass]
 
-        tokens = self.tokenizePat.split(block)
+        # Step 1: split the chunk of text into a token stream, each token
+        # is either a tag /@\w+/ or a chunk of text (tag argument).
+        # whitespace on either side of tokens is stripped
 
-        # remove all whitespace strings
+        tokens = self.tokenizePat.split(block)
         tokens = [n.strip() for n in tokens if n.strip()]
 
+        # Step 2: initialize an object which will hold the resultant JSON
+        # representation of this content block.
         curObj = {}
 
         # special case tagless first block for module description
-        # or func/prop description
+        # or func/prop description.  This allows doc authors to omit tags
+        # in more places.
         if not self._isMarker(tokens[0]):
             if firstBlock:
                 # in the first block case we'll guess that this
@@ -347,9 +357,14 @@ class DocStract():
             else:
                 curObj['desc'] = tokens.pop(0)
 
+        # Step 3: parse all tokens from the token stream, populating the
+        # output representation as we go.
         while len(tokens):
             self._consumeToks(tokens, curObj, data)
 
+        # Step 4: If the content block type is not known ('property', 'class',
+        #         'function', etc), then let's apply some heuristics to guess
+        #         what the documentation author *really* meant.
         (guessedName, guessedType) = self._analyzeContext(context)
 
         if not 'name' in curObj and guessedName:
@@ -358,6 +373,11 @@ class DocStract():
         if not 'type' in curObj and guessedType:
             curObj['type'] = guessedType
 
+
+        # Step 5: Fixup phase!  Depending on the docblock type, we may wish to perform
+        #         some mutations to the output representation (like remove certain
+        #         properties that are redundant, or improve the names of properties that
+        #         were ambiguous until now (@type can be property type or return type)
         if 'type' in curObj:
             if curObj['type'] == 'function':
                 del curObj['type']
@@ -399,6 +419,14 @@ class DocStract():
                     globalData['module'] = curObj['name']
             else:
                 raise RuntimeError("I don't know what to do with a: %s" % curObj['type'])
+
+        # Step 6: Validation phase!  Not all tags are allowed in all types of documentation blocks.
+        # like '@returns' inside a '@classend' block would just be nutty.  let's scrutinize this
+        # block to make sure it's sane.
+
+        # XXX: write this phase!
+
+        # Step 7: Addition
 
     def extractFromFile(self, filename):
         # next read the whole file into memory
