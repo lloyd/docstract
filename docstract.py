@@ -273,31 +273,23 @@ class DocStract():
         tokens = self.tokenizePat.split(block)
         tokens = [n.strip() for n in tokens if n.strip()]
 
-        # Step 1.5: collapse aliases
-        tokens = [self.aliases[n] if self.aliases.has_key(n) else n for n in tokens]
-
         # Step 2: initialize an object which will hold the resultant JSON
         # representation of this content block.
         curObj = {}
 
-        # special case tagless first block for module description
-        # or func/prop description.  This allows doc authors to omit tags
-        # in more places.
+        # Step 3: Treat initial text as if it were a description. 
         if not self._isMarker(tokens[0]):
-            if firstBlock:
-                # in the first block case we'll guess that this
-                # is module doc
-                curObj['type'] = 'module'
-                curObj['desc'] = tokens.pop(0)
-            else:
-                curObj['desc'] = tokens.pop(0)
+            tokens.insert(0, '@desc')
 
-        # Step 3: parse all tokens from the token stream, populating the
+        # Step 4: collapse aliases
+        tokens = [self.aliases[n] if self.aliases.has_key(n) else n for n in tokens]
+
+        # Step 5: parse all tokens from the token stream, populating the
         # output representation as we go.
         while len(tokens):
             self._consumeToks(tokens, curObj, data)
 
-        # Step 4: If the content block type is not known ('property', 'class',
+        # Step 6: If the content block type is not known ('property', 'class',
         #         'function', etc), then let's apply some heuristics to guess
         #         what the documentation author *really* meant.
         (guessedName, guessedType) = self._analyzeContext(context)
@@ -308,8 +300,11 @@ class DocStract():
         if not 'type' in curObj and guessedType:
             curObj['type'] = guessedType
 
+        # in the first block case we'll guess that this is a module doc block
+        if not 'type' in curObj and firstBlock:
+            curObj['type'] = 'module'
 
-        # Step 5: Fixup phase!  Depending on the docblock type, we may wish to perform
+        # Step 6: Fixup phase!  Depending on the docblock type, we may wish to perform
         #         some mutations to the output representation (like remove certain
         #         properties that are redundant, or improve the names of properties that
         #         were ambiguous until now (@type can be property type or return type)
@@ -357,13 +352,15 @@ class DocStract():
             else:
                 raise RuntimeError("I don't know what to do with a: %s" % curObj['type'])
 
-        # Step 6: Validation phase!  Not all tags are allowed in all types of documentation blocks.
+        # Step 7: Validation phase!  Not all tags are allowed in all types of documentation blocks.
         # like '@returns' inside a '@classend' block would just be nutty.  let's scrutinize this
         # block to make sure it's sane.
 
         # XXX: write this phase!
 
-        # Step 7: Addition
+        # Step 8: Addition to output document
+
+        # XXX: write this phase!
 
     def extractFromFile(self, filename):
         # next read the whole file into memory
