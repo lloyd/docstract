@@ -57,6 +57,8 @@ class DocStract():
             '@params': '@param',
             '@parameter': '@param',
             '@parameters': '@param',
+            '@argument': '@param',
+            '@arg': '@param',
             '@prop': '@property',
             '@returns': '@return',
             '@description': '@desc',
@@ -64,7 +66,9 @@ class DocStract():
             '@see_also': '@see',
             '@beginclass': '@class',
             '@begin_class': '@class',
-            '@end_class': '@endclass'
+            '@end_class': '@endclass',
+            '@throw': '@throws',
+            '@exception': '@throws'
             }
 
         # lookup table of tag handlers, lil' object that can parse and inject
