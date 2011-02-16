@@ -1,0 +1,15 @@
+{
+  "desc": "If so desired, the documentor may break up desc and\n type of return value (like in jsdoc) .", 
+  "filename": "tests/type_and_returns_in_same_function_good.js", 
+  "functions": [
+    {
+      "desc": "This function returns a String.", 
+      "name": null, 
+      "returns": {
+        "desc": "The name of the current user", 
+        "type": "String"
+      }
+    }
+  ], 
+  "module": "type_and_returns_in_same_function_good"
+}

@@ -416,9 +416,15 @@ class DocStract():
             # someone added an extension that behaves badly, or if @type and
             # @returns occur in the same block.
             if 'returns' in current:
-                raise RuntimeError("Return value redefined (@type and @returns in " +
-                                   "same function block?")
-            current['returns'] = obj
+                for k in current['returns']:
+                    if k in obj:
+                        raise RuntimeError("Return %s redefined (@type and @returns in " % k +
+                                           "same function block?)")
+            else:
+                current['returns'] = {}
+
+            for k in obj:
+                current['returns'][k] = obj[k]
 
     class TypeTagHandler(ReturnTagHandler):
         # type is special.  it means different things

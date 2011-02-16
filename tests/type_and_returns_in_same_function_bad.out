@@ -1,6 +1,6 @@
 {
   "args": [
-    "Return value redefined (@type and @returns in same function block?"
+    "Return type redefined (@type and @returns in same function block?)"
   ], 
   "exception_type": "<type 'exceptions.RuntimeError'>", 
   "stack": [
@@ -26,7 +26,7 @@
     ], 
     [
       "attach", 
-      "\"same function block?\")"
+      "\"same function block?)\")"
     ]
   ]
 }
