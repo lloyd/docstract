@@ -219,7 +219,10 @@ class DocStract():
                                 thisContext))
 
         # now check that all present tags are allowed in this block
-        # XXX: write me
+        for tag in parseData['tagData']:
+            if not tag == parseData['blockHandler'].tagName and tag not in parseData['blockHandler'].allowedTags:
+                raise RuntimeError("%s not allowed in %s block" %
+                                   (tag, parseData['blockHandler'].tagName))
 
         # Step 8: Generation of output document
         doc = { }
@@ -428,6 +431,7 @@ class DocStract():
                 parent[k] = doc[k]
 
     class ModuleBlockHandler(BlockHandler):
+        allowedTags = [ '@desc', '@see' ]
         allowedContexts = [ 'global' ]
         takesArg = True
         _pat = re.compile('^(\w+)$|^(?:([\w.\[\]]+)\s*\n)?\s*(.*)$', re.S);
@@ -455,6 +459,7 @@ class DocStract():
                 current['desc'] = obj['desc']
 
     class FunctionBlockHandler(ModuleBlockHandler):
+        allowedTags = [ '@see', '@param', '@return', '@throws', '@desc' ]
         allowedContexts = [ 'global', 'class' ]
 
         def attach(self, obj, current):
@@ -473,6 +478,7 @@ class DocStract():
             parent["functions"].append(doc)
 
     class ConstructorBlockHandler(BlockHandler):
+        allowedTags = [ '@see', '@param', '@throws', '@desc' ]
         takesArg = True
         argOptional = True
         allowedContexts = [ 'class' ]
@@ -500,6 +506,7 @@ class DocStract():
             pass
 
     class PropertyBlockHandler(ParamTagHandler, BlockHandler):
+        allowedTags = [ '@see', '@throws', '@desc', '@type' ]
         def attach(self, obj, current):
             for x in obj:
                 current[x] = obj[x]
