@@ -236,7 +236,7 @@ class DocStract():
                 val = [ val ]
             for v in val:
                 handler = self.tags[tag] if tag in self.tags else self.blockTypes[tag]
-                handler.attach(v, doc)
+                handler.attach(v, doc, parseData['blockHandler'].tagName)
 
         # special case to allow for lazy class closing (omit @endclass when
         # many classes are being declared in a row)
@@ -319,7 +319,7 @@ class DocStract():
         # JSON document for a documentation block. `obj` is the value
         # returned by parse(), and parent is the json document that
         # the function should mutate
-        def attach(self, obj, parent):
+        def attach(self, obj, parent, blockType):
             parent[self.tagName[1:]] = obj
 
     class ParamTagHandler(TagHandler):
@@ -360,7 +360,7 @@ class DocStract():
                     p['desc'] = m.group(8)
             return p
 
-        def attach(self, obj, current):
+        def attach(self, obj, current, blockType):
             if not 'params' in current:
                 current['params'] = [ ]
             current['params'].append(obj)
@@ -368,7 +368,7 @@ class DocStract():
     class SeeTagHandler(TagHandler):
         takesArg = True
         mayRecur = True
-        def attach(self, obj, current):
+        def attach(self, obj, current, blockType):
             if not 'see' in current:
                 current['see'] = [ ]
             current['see'].append(obj)
@@ -376,7 +376,7 @@ class DocStract():
     class DescTagHandler(TagHandler):
         takesArg = True
         mayRecur = True
-        def attach(self, obj, current):
+        def attach(self, obj, current, blockType):
             if 'desc' in current:
                 current['desc'] = current['desc'] + "\n\n" + obj
             else:
@@ -385,40 +385,58 @@ class DocStract():
     class ReturnTagHandler(TagHandler):
         takesArg = True
         _pat = re.compile('^\s*(?:{(\w+)})?\s*(.*)$', re.S);
+        _isWordPat = re.compile('^\w+$', re.S);
 
         def parse(self, text):
             m = self._pat.match(text)
-            if not m:
+            rv = { }
+            if m:
+                if m.group(1):
+                    rv['type'] = m.group(1)
+                if m.group(2):
+                    # If the match is a single word, assume it's a
+                    # typename
+                    if self._isWordPat.match(m.group(2)):
+                        rv['type'] = m.group(2)
+                    else:
+                        rv['desc'] = m.group(2)
+            else:
                 print "no match"
                 raise RuntimeError("Malformed args to %s: %s" %
                                    (self.tagName, (text[:20] + "...")))
-            rv = { }
-            if m.group(1):
-                rv['type'] = m.group(1)
-            rv['desc'] = m.group(2)
 
             return rv
 
-        def attach(self, obj, current):
+        def attach(self, obj, current, blockType):
+            # The only way this can occur (returns already defined) is if
+            # someone added an extension that behaves badly, or if @type and
+            # @returns occur in the same block.
+            if 'returns' in current:
+                raise RuntimeError("Return value redefined (@type and @returns in " +
+                                   "same function block?")
             current['returns'] = obj
+
+    class TypeTagHandler(ReturnTagHandler):
+        # type is special.  it means different things
+        # when it occurs in a '@property' vs. a '@function'
+        # context.  in the former it's the property type, in
+        # the later, it's an alias for '@return'
+        def attach(self, obj, current, blockType):
+            if (blockType == '@property'):
+                if 'desc' in obj or 'type' not in obj:
+                    raise RuntimeError("Malformed args to %s: %s" %
+                                       (self.tagName, (obj['desc'][:20] + "...")))
+                current['type'] = obj["type"]
+            else:
+                DocStract.ReturnTagHandler.attach(self, obj, current, blockType)
 
     class ThrowsTagHandler(ReturnTagHandler):
         mayRecur = True
-        def attach(self, obj, current):
+        def attach(self, obj, current, blockType):
             if 'throws' not in current:
                 current['throws'] = [ ]
             current['throws'].append(obj)
 
-    class TypeTagHandler(TagHandler):
-        takesArg = True
-        _pat = re.compile('^{?(.*?)}?$')
-
-        def parse(self, text):
-            # strip off { } if present
-            return self._pat.match(text).group(1)
-
-        def attach(self, obj, current):
-            current['type'] = obj
 
     # a block handler is slightly different than a tag
     # handler.  Each document block is of a certain type,
@@ -458,7 +476,7 @@ class DocStract():
                     a["desc"] = m.group(3)
             return a
 
-        def attach(self, obj, current):
+        def attach(self, obj, current, blockType):
             if "name" in obj:
                 current['module'] = obj["name"]
             if "desc" in obj:
@@ -467,10 +485,10 @@ class DocStract():
                 current['desc'] = obj['desc']
 
     class FunctionBlockHandler(ModuleBlockHandler):
-        allowedTags = [ '@see', '@param', '@return', '@throws', '@desc' ]
+        allowedTags = [ '@see', '@param', '@return', '@throws', '@desc', '@type' ]
         allowedContexts = [ 'global', 'class' ]
 
-        def attach(self, obj, current):
+        def attach(self, obj, current, blockType):
             if "name" in obj:
                 current['name'] = obj["name"]
             if "desc" in obj:
@@ -494,7 +512,7 @@ class DocStract():
         takesArg = True
         argOptional = True
         allowedContexts = [ 'class' ]
-        def attach(self, obj, current):
+        def attach(self, obj, current, blockType):
             if obj:
                 if "desc" in current:
                     obj = current['desc'] + "\n\n" + obj
@@ -515,14 +533,14 @@ class DocStract():
             parent["classes"].append(doc)
 
     class EndClassBlockHandler(BlockHandler):
-        def attach(self, obj, current):
+        def attach(self, obj, current, blockType):
             pass
         def merge(self, doc, parent, guessedName):
             pass
 
     class PropertyBlockHandler(ParamTagHandler, BlockHandler):
         allowedTags = [ '@see', '@throws', '@desc', '@type' ]
-        def attach(self, obj, current):
+        def attach(self, obj, current, blockType):
             for x in obj:
                 current[x] = obj[x]
 

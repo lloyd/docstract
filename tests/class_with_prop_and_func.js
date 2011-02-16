@@ -17,7 +17,7 @@
 /**
  * @function bar
  * the foo property of my url classs
- * @returns nothing
+ * @returns nothing.
  */
 
 /** @endclass */

@@ -6,7 +6,7 @@
       "desc": "a function which converts URLs to filenames", 
       "name": "toFilename", 
       "returns": {
-        "desc": "", 
+        "desc": "A string.", 
         "type": "string"
       }
     }, 
@@ -14,14 +14,17 @@
       "desc": "a function which converts URLs to filenames", 
       "name": "toFilename2", 
       "returns": {
-        "desc": "", 
+        "desc": "A String.", 
         "type": "string"
       }
     }, 
     {
       "desc": "a function which converts URLs to filenames", 
       "name": "toFilename3", 
-      "type": "string"
+      "returns": {
+        "desc": "Yeah, A String.", 
+        "type": "string"
+      }
     }
   ], 
   "module": "function_supports_type_or_return_or_returns"

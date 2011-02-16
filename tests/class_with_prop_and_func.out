@@ -7,7 +7,7 @@
           "desc": "the foo property of my url classs", 
           "name": "bar", 
           "returns": {
-            "desc": "nothing"
+            "desc": "nothing."
           }
         }
       ], 

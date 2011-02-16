@@ -1,0 +1,32 @@
+{
+  "args": [
+    "Return value redefined (@type and @returns in same function block?"
+  ], 
+  "exception_type": "<type 'exceptions.RuntimeError'>", 
+  "stack": [
+    [
+      "<module>", 
+      "got = ds.extractFromFile(os.path.join(testDir, test + \".js\"))"
+    ], 
+    [
+      "extractFromFile", 
+      "data = self.extract(contents)"
+    ], 
+    [
+      "extract", 
+      "self._analyzeBlock(block, context, firstBlock, data)"
+    ], 
+    [
+      "_analyzeBlock", 
+      "handler.attach(v, doc, parseData['blockHandler'].tagName)"
+    ], 
+    [
+      "attach", 
+      "DocStract.ReturnTagHandler.attach(self, obj, current, blockType)"
+    ], 
+    [
+      "attach", 
+      "\"same function block?\")"
+    ]
+  ]
+}
