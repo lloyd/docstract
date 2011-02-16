@@ -502,6 +502,9 @@ class DocStract():
                 doc['name'] = guessedName
             if not "classes" in parent:
                 parent["classes"] = []
+            for c in  parent["classes"]:
+                if doc["name"] == c['name']:
+                    raise RuntimeError("class '%s' redefined" % doc["name"])
             parent["classes"].append(doc)
 
     class EndClassBlockHandler(BlockHandler):
