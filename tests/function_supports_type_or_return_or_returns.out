@@ -1,0 +1,28 @@
+{
+  "desc": "A module with the three different ways to delcare\nreturn types.", 
+  "filename": "tests/function_supports_type_or_return_or_returns.js", 
+  "functions": [
+    {
+      "desc": "a function which converts URLs to filenames", 
+      "name": "toFilename", 
+      "returns": {
+        "desc": "", 
+        "type": "string"
+      }
+    }, 
+    {
+      "desc": "a function which converts URLs to filenames", 
+      "name": "toFilename2", 
+      "returns": {
+        "desc": "", 
+        "type": "string"
+      }
+    }, 
+    {
+      "desc": "a function which converts URLs to filenames", 
+      "name": "toFilename3", 
+      "type": "string"
+    }
+  ], 
+  "module": "function_supports_type_or_return_or_returns"
+}

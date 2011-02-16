@@ -20,6 +20,7 @@ import os
 import json
 import sys
 import difflib
+import traceback
 from docstract import DocStract
 
 ds = DocStract()
@@ -53,7 +54,11 @@ for test in tests:
     try:
         got = ds.extractFromFile(os.path.join(testDir, test + ".js"))
     except Exception as e:
-        got = { "exception_type": str(type(e)), "args": e.args }
+        stack = []
+        l = traceback.extract_tb(sys.exc_info()[2])
+        for x in l:
+            stack.append([ x[2], x[3] ])
+        got = { "exception_type": str(type(e)), "args": e.args, "stack": stack }
     want = None
     try:
         with open(os.path.join(testDir, test + ".out"), "r") as f:

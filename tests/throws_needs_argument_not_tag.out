@@ -2,5 +2,27 @@
   "args": [
     "@throws tag requires an argument"
   ], 
-  "exception_type": "<type 'exceptions.RuntimeError'>"
+  "exception_type": "<type 'exceptions.RuntimeError'>", 
+  "stack": [
+    [
+      "<module>", 
+      "got = ds.extractFromFile(os.path.join(testDir, test + \".js\"))"
+    ], 
+    [
+      "extractFromFile", 
+      "data = self.extract(contents)"
+    ], 
+    [
+      "extract", 
+      "self._analyzeBlock(block, context, firstBlock, data)"
+    ], 
+    [
+      "_analyzeBlock", 
+      "self._consumeToks(tokens, parseData)"
+    ], 
+    [
+      "_consumeToks", 
+      "raise RuntimeError(\"%s tag requires an argument\" % cur)"
+    ]
+  ]
 }
