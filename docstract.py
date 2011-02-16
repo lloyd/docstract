@@ -206,11 +206,20 @@ class DocStract():
                 raise RuntimeError("Don't know how to handle a '%s' documentation block" % guessedType)
             parseData['blockHandler'] = self.blockTypes[guessedType]
 
-        # Step 7: Validation phase!  Not all tags are allowed in all types of documentation blocks.
-        # like '@returns' inside a '@classend' block would just be nutty.  let's scrutinize this
-        # block to make sure it's sane.
+        # Step 7: Validation phase!  Not all tags are allowed in all types of
+        # documentation blocks.  like '@returns' inside a '@classend' block
+        # would just be nutty.  let's scrutinize this block to make sure it's
+        # sane.
 
-        # XXX: write this phase!
+        # first check that this doc block type is valid in present context
+        thisContext = "class" if not self._currentClass == None else "global"
+        if thisContext not in parseData['blockHandler'].allowedContexts:
+            raise RuntimeError("%s not allowed in %s context" %
+                               (parseData['blockHandler'].tagName,
+                                thisContext))
+
+        # now check that all present tags are allowed in this block
+        # XXX: write me
 
         # Step 8: Generation of output document
         doc = { }
@@ -419,6 +428,7 @@ class DocStract():
                 parent[k] = doc[k]
 
     class ModuleBlockHandler(BlockHandler):
+        allowedContexts = [ 'global' ]
         takesArg = True
         _pat = re.compile('^(\w+)$|^(?:([\w.\[\]]+)\s*\n)?\s*(.*)$', re.S);
         def parse(self, text):
@@ -445,6 +455,8 @@ class DocStract():
                 current['desc'] = obj['desc']
 
     class FunctionBlockHandler(ModuleBlockHandler):
+        allowedContexts = [ 'global', 'class' ]
+
         def attach(self, obj, current):
             if "name" in obj:
                 current['name'] = obj["name"]
@@ -463,6 +475,7 @@ class DocStract():
     class ConstructorBlockHandler(BlockHandler):
         takesArg = True
         argOptional = True
+        allowedContexts = [ 'class' ]
         def attach(self, obj, current):
             if obj:
                 if "desc" in current:

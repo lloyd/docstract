@@ -1,6 +1,6 @@
 {
   "args": [
-    "@module not allowed in class context"
+    "@constructor not allowed in global context"
   ], 
   "exception_type": "<type 'exceptions.RuntimeError'>", 
   "stack": [
