@@ -480,6 +480,10 @@ class DocStract():
                 doc['name'] = guessedName
             if not "functions" in parent:
                 parent["functions"] = []
+            for f in parent["functions"]:
+                if doc["name"] == f['name']:
+                    raise RuntimeError("function '%s' redefined" % doc["name"])
+
             parent["functions"].append(doc)
 
     class ConstructorBlockHandler(BlockHandler):
@@ -524,9 +528,10 @@ class DocStract():
                 doc['name'] = guessedName
             if not "properties" in parent:
                 parent["properties"] = []
+            for p in parent["properties"]:
+                if doc["name"] == p['name']:
+                    raise RuntimeError("property '%s' redefined" % doc["name"])
             parent["properties"].append(doc)
-
-
 
 
 if __name__ == '__main__':

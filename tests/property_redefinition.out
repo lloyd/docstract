@@ -1,0 +1,28 @@
+{
+  "args": [
+    "property 'Foo' redefined"
+  ], 
+  "exception_type": "<type 'exceptions.RuntimeError'>", 
+  "stack": [
+    [
+      "<module>", 
+      "got = ds.extractFromFile(os.path.join(testDir, test + \".js\"))"
+    ], 
+    [
+      "extractFromFile", 
+      "data = self.extract(contents)"
+    ], 
+    [
+      "extract", 
+      "self._analyzeBlock(block, context, firstBlock, data)"
+    ], 
+    [
+      "_analyzeBlock", 
+      "parseData['blockHandler'].merge(doc, data, guessedName)"
+    ], 
+    [
+      "merge", 
+      "raise RuntimeError(\"property '%s' redefined\" % doc[\"name\"])"
+    ]
+  ]
+}
