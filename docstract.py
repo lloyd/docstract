@@ -178,7 +178,6 @@ class DocStract():
         # representation of parsed block data.
         parseData = {
             'blockHandler': None,
-            'handlerContext': None,
             'tagData': { }
             }
 
