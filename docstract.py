@@ -508,7 +508,7 @@ class DocStract():
             parent["functions"].append(doc)
 
     class ConstructorBlockHandler(BlockHandler):
-        allowedTags = [ '@see', '@param', '@throws', '@desc' ]
+        allowedTags = [ '@see', '@param', '@throws', '@desc', '@return', '@type' ]
         takesArg = True
         argOptional = True
         allowedContexts = [ 'class' ]
