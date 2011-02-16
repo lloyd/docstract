@@ -16,6 +16,7 @@
 
 import re
 import os
+import types
 
 class DocStract():
     def __init__(self):
@@ -30,45 +31,20 @@ class DocStract():
         # is a space before it
         self.tokenizePat = re.compile('^\s?(@\w+)', re.M);
 
-        # parse a function/module/class:
-        # @function [name]
-        # [description]
-        self.functionPat = re.compile('^(\w+)$|^(?:([\w.\[\]]+)\s*\n)?\s*(.*)$', re.S);
-
-        # parse properties or params.
-        # We support three forms:
-        #   @property <name> <{type}> [description]
-        #   @property <{type}> <name> [description]
-        #   @property [name]
-        #   [description]
-        self.propPat =  re.compile(
-            '(?:^([\w.\[\]]+)\s*(?:{(\w+)})\s*(.*)$)|' +
-            '(?:^{(\w+)}\s*([\w.\[\]]+)\s*(.*)$)|' +
-            '(?:^([\w.\[\]]+)?\s*(.*)$)',
-            re.S);
-
-        # heuristic type and name guessing stuff, applied to the first non-whitespace
-        # line after the doc block.  designed for commonjs modules (note the 'exports').
+        # heuristic type and name guessing stuff, applied to the first
+        # non-whitespace line after the doc block.  designed for commonjs
+        # modules (note the 'exports').
         self.findExportsPat = re.compile('(?:^|\s)exports\.(\w+)\s', re.M);
 
-        # tags that are allowed inside documentation blocks.
-        self.classMarker = "@class"
-        self.classEndMarker = "@endclass"
-        self.constructorMarker = "@constructor"
-        self.functionMarker = "@function"
-        self.moduleMarker = "@module"
-        self.propertyMarker = "@property"
-
         # block types.  Each document block is of one of these types.
-        # XXX: this should become an array of classes, like self.tags 
-        self.blockTypes = (
-            self.classMarker,
-            self.classEndMarker,
-            self.constructorMarker,
-            self.functionMarker,
-            self.moduleMarker,
-            self.propertyMarker
-            )
+        self.blockTypes = {
+            '@class':       self.ClassBlockHandler("@class"),
+            '@endclass':    self.EndClassBlockHandler("@endclass"),
+            '@constructor': self.ConstructorBlockHandler("@constructor"),
+            '@function':    self.FunctionBlockHandler("@function"),
+            '@module':      self.ModuleBlockHandler("@module"),
+            '@property':    self.PropertyBlockHandler("@property")
+            }
 
         # tag aliases, direct equivalences.  Note, RHS is normal form.
         self.aliases = {
@@ -76,10 +52,14 @@ class DocStract():
             '@params': '@param',
             '@parameter': '@param',
             '@parameters': '@param',
+            '@prop': '@property',
             '@returns': '@return',
             '@description': '@desc',
             '@seealso': '@see',
-            '@see_also': '@see'
+            '@see_also': '@see',
+            '@beginclass': '@class',
+            '@begin_class': '@class',
+            '@end_class': '@endclass'
             }
 
         # lookup table of tag handlers, lil' object that can parse and inject
@@ -114,134 +94,44 @@ class DocStract():
             return toks[0]
         return None
 
-    def _consumeToks(self, tokens, currentObj, data):
+    def _consumeToks(self, tokens, currentObj):
         cur = tokens.pop(0)
 
-        if cur == self.moduleMarker:
-            currentObj["type"] = 'module'
-            nxt = self._popNonMarker(tokens)
-            if nxt:
-                # nxt describes the module
-                m = self.functionPat.match(nxt)
-                if not m:
-                    raise RuntimeError("Malformed args to %s: %s" %
-                                       (self.moduleMarker, (cur[:20] + "...")))
-                if m.group(1):
-                    currentObj["name"] = m.group(1)
-                else:
-                    if m.group(2):
-                        currentObj["name"] = m.group(2)
-                    if m.group(3):
-                        if 'desc' in currentObj:
-                            currentObj['desc'] = currentObj['desc'] + "\n\n" + m.group(3)
-                        else:
-                            currentObj['desc'] = m.group(3)
+        handler = None
+        # is this a blocktype declaration?
+        if cur in self.blockTypes:
+            handler = self.blockTypes[cur]
+            currentObj['blockHandler'] = handler
+        elif cur in self.tags:
+            handler = self.tags[cur]
+
+        # do we have a handler for this tag?
+        if not handler == None:
+            arg = None
+
+            # get argument if required
+            if handler.takesArg:
+                arg = self._popNonMarker(tokens)
+
+                if arg == None and not handler.argOptional:
+                    raise RuntimeError("%s tag requires an argument" % cur)
+
+            ctx = handler.parse(arg)
+
+            if handler.mayRecur:
+                if cur not in currentObj["tagData"]:
+                    currentObj["tagData"][cur] = []
+                currentObj["tagData"][cur].append(ctx)
             else:
-                # in this case we'll have to guess the function name
-                pass
+                if cur in currentObj["tagData"]:
+                    raise RuntimeError("%s tag may not occur multiple times in the same documentation block" % cur)
+                currentObj["tagData"][cur] = ctx
 
-        elif cur == self.classMarker:
-            currentObj["type"] = 'classstart'
-            nxt = self._popNonMarker(tokens)
-            if nxt:
-                # nxt describes the module
-                m = self.functionPat.match(nxt)
-                if not m:
-                    raise RuntimeError("Malformed args to %s: %s" %
-                                       (self.classMarker, (cur[:20] + "...")))
-                if m.group(1):
-                    currentObj["name"] = m.group(1)
-                else:
-                    if m.group(2):
-                        currentObj["name"] = m.group(2)
-                    else:
-                        raise RuntimeError("A class must have a name")
-
-                    if m.group(3):
-                        if 'desc' in currentObj:
-                            currentObj['desc'] = currentObj['desc'] + "\n\n" + m.group(3)
-                        else:
-                            currentObj['desc'] = m.group(3)
-            else:
-                # in this case we'll have to guess the function name
-                pass
-
-        elif cur == self.classEndMarker:
-            currentObj["type"] = 'classend'
-
-        elif cur == self.constructorMarker:
-            currentObj["type"] = 'constructor'
-            if self._currentClass == None:
-                raise RuntimeError("A constructor must be defined inside a class")
-
-            nxt = self._popNonMarker(tokens)
-            if nxt:
-                currentObj['desc'] = nxt
-
-        elif cur == self.functionMarker:
-            currentObj["type"] = 'function'
-            nxt = self._popNonMarker(tokens)
-            if nxt:
-                # nxt describes the function
-                m = self.functionPat.match(nxt)
-                if not m:
-                    raise RuntimeError("Malformed args to %s: %s" %
-                                       (self.functionMarker, (cur[:20] + "...")))
-                if m.group(1):
-                    currentObj['name'] = m.group(1)
-                else:
-                    if m.group(2):
-                        currentObj['name'] = m.group(2)
-                    if m.group(3):
-                        currentObj['desc'] = m.group(3)
-            else:
-                # in this case we'll have to guess the function name
-                pass
-        elif cur == self.propertyMarker:
-            currentObj["type"] = 'property'
-            nxt = self._popNonMarker(tokens)
-            if nxt:
-                # nxt now describes the property
-                m = self.propPat.match(nxt)
-                if not m:
-                    raise RuntimeError("Malformed args to %s: %s" %
-                                       (self.propertyMarker, (nxt[:20] + "...")))
-                if m.group(1):
-                    currentObj['name'] = m.group(1)
-                    currentObj['dataType'] = m.group(2)
-                    if m.group(3):
-                        currentObj['desc'] = m.group(3)
-                elif m.group(4):
-                    currentObj['dataType'] = m.group(4)
-                    currentObj['name'] = m.group(5)
-                    if m.group(6):
-                        currentObj['desc'] = m.group(6)
-                else:
-                    if m.group(7):
-                        currentObj['name'] = m.group(7)
-                    if m.group(8):
-                        currentObj['desc'] = m.group(8)
-            else:
-                # in this case we'll have to guess the function name
-                pass
+        # ooops.  Dunno what that is!
         else:
-            # do we have a handler for this type of marker?
-            if (self.tags.has_key(cur)):
-                arg = None
+            raise RuntimeError("unrecognized tag: %s" % cur)
 
-                # get argument if required
-                if self.tags[cur].takesArg:
-                    arg = self._popNonMarker(tokens)
-
-                    if arg == None and not self.tags[cur].argOptional:
-                        raise RuntimeError("%s tag requires an argument" % cur)
-
-                ctx = self.tags[cur].parse(arg)
-                self.tags[cur].attach(ctx, currentObj)
-            else:
-                raise RuntimeError("unrecognized tag: %s" % cur)
-
-    def _analyzeContext(self, context):
+    def _guessBlockType(self, firstBlock, context, tags):
         guessedName = None
         guessedType = None
         # first let's see if there's an exports statement after the block
@@ -251,9 +141,12 @@ class DocStract():
 
             # we'll only try to guess type if there's an exports statement
             if context.find("function") >= 0: 
-                guessedType = 'function'
+                guessedType = '@function'
             else:
-                guessedType = 'property'
+                guessedType = '@property'
+        elif firstBlock:
+            guessedType = '@module'
+
         return guessedName, guessedType
 
     def _analyzeBlock(self, block, context, firstBlock, data):
@@ -273,9 +166,13 @@ class DocStract():
         tokens = self.tokenizePat.split(block)
         tokens = [n.strip() for n in tokens if n.strip()]
 
-        # Step 2: initialize an object which will hold the resultant JSON
-        # representation of this content block.
-        curObj = {}
+        # Step 2: initialize an object which will hold the intermediate
+        # representation of parsed block data.
+        parseData = {
+            'blockHandler': None,
+            'handlerContext': None,
+            'tagData': { }
+            }
 
         # Step 3: Treat initial text as if it were a description. 
         if not self._isMarker(tokens[0]):
@@ -287,70 +184,19 @@ class DocStract():
         # Step 5: parse all tokens from the token stream, populating the
         # output representation as we go.
         while len(tokens):
-            self._consumeToks(tokens, curObj, data)
+            self._consumeToks(tokens, parseData)
 
         # Step 6: If the content block type is not known ('property', 'class',
         #         'function', etc), then let's apply some heuristics to guess
         #         what the documentation author *really* meant.
-        (guessedName, guessedType) = self._analyzeContext(context)
+        (guessedName, guessedType) = self._guessBlockType(firstBlock, context, parseData['tagData'].keys())
 
-        if not 'name' in curObj and guessedName:
-            curObj['name'] = guessedName
-
-        if not 'type' in curObj and guessedType:
-            curObj['type'] = guessedType
-
-        # in the first block case we'll guess that this is a module doc block
-        if not 'type' in curObj and firstBlock:
-            curObj['type'] = 'module'
-
-        # Step 6: Fixup phase!  Depending on the docblock type, we may wish to perform
-        #         some mutations to the output representation (like remove certain
-        #         properties that are redundant, or improve the names of properties that
-        #         were ambiguous until now (@type can be property type or return type)
-        if 'type' in curObj:
-            if curObj['type'] == 'function':
-                del curObj['type']
-                if 'functions' not in data:
-                    data['functions'] = [ ]
-                data['functions'].append(curObj)
-            elif curObj['type'] == 'constructor':
-                del curObj['type']
-                data['constructor'] = curObj
-            elif curObj['type'] == 'property':
-                if 'dataType' in curObj:
-                    curObj['type'] = curObj['dataType']
-                    del curObj['dataType']
-                else:
-                    del curObj['type']
-
-                if 'properties' not in data:
-                    data['properties'] = [ ]
-                data['properties'].append(curObj)
-            elif curObj['type'] == 'classstart':
-                if not 'classes' in data:
-                    data['classes'] = [ ]
-
-                self._currentClass = len(data['classes'])
-
-                # XXX: check for redefinition?
-                del curObj['type']
-                data['classes'].append(curObj)
-
-            elif curObj['type'] == 'classend':
-                self._currentClass = None
-
-            elif curObj['type'] == 'module':
-                if 'desc' in curObj:
-                    if 'desc' in globalData:
-                        curObj['desc'] = "\n\n".join([globalData['desc'], curObj['desc']])
-                    globalData['desc'] = curObj['desc']
-                if 'name' in curObj:
-                    globalData['module'] = curObj['name']
-                if 'see' in curObj:
-                    globalData['see'] = curObj['see']
-            else:
-                raise RuntimeError("I don't know what to do with a: %s" % curObj['type'])
+        if parseData['blockHandler'] == None:
+            if guessedType == None:
+                raise RuntimeError("Ambiguous documentation block: %s..." % block[:20])
+            elif guessedType not in self.blockTypes:
+                raise RuntimeError("Don't know how to handle a '%s' documentation block" % guessedType)
+            parseData['blockHandler'] = self.blockTypes[guessedType]
 
         # Step 7: Validation phase!  Not all tags are allowed in all types of documentation blocks.
         # like '@returns' inside a '@classend' block would just be nutty.  let's scrutinize this
@@ -358,9 +204,24 @@ class DocStract():
 
         # XXX: write this phase!
 
-        # Step 8: Addition to output document
+        # Step 8: Generation of output document
+        doc = { }
 
-        # XXX: write this phase!
+        for tag in parseData['tagData']:
+            val = parseData['tagData'][tag]
+            if not type(val) == types.ListType:
+                val = [ val ]
+            for v in val:
+                handler = self.tags[tag] if tag in self.tags else self.blockTypes[tag]
+                handler.attach(v, doc)
+
+        parseData['blockHandler'].merge(doc, data, guessedName)
+
+        # special case for classes!
+        if parseData['blockHandler'].tagName == '@class':
+            self._currentClass = len(data['classes']) - 1
+        elif parseData['blockHandler'].tagName == '@endclass':
+            self._currentClass = None
 
     def extractFromFile(self, filename):
         # next read the whole file into memory
@@ -434,6 +295,7 @@ class DocStract():
             parent[self.tagName[1:]] = obj
 
     class ParamTagHandler(TagHandler):
+        mayRecur = True
         takesArg = True
 
         # We support three forms:
@@ -499,6 +361,7 @@ class DocStract():
         def parse(self, text):
             m = self._pat.match(text)
             if not m:
+                print "no match"
                 raise RuntimeError("Malformed args to %s: %s" %
                                    (self.tagName, (text[:20] + "...")))
             rv = { }
@@ -512,6 +375,7 @@ class DocStract():
             current['returns'] = obj
 
     class ThrowsTagHandler(ReturnTagHandler):
+        mayRecur = True
         def attach(self, obj, current):
             if 'throws' not in current:
                 current['throws'] = [ ]
@@ -526,7 +390,108 @@ class DocStract():
             return self._pat.match(text).group(1)
 
         def attach(self, obj, current):
-            current['dataType'] = obj
+            current['type'] = obj
+
+    # a block handler is slightly different than a tag
+    # handler.  Each document block is of a certain type,
+    # it describes *something*.  Block handlers do
+    # everything that TagHandlers do, but also:
+    #  * one block handler per code block, they're mutually
+    #    exclusive (a docblock can't describe a *function*
+    #    AND a *property*)
+    #  * express what tags may occur inside of them
+    #  * express what contexts they may occur in ('global'
+    #    and 'class' are the only two meaninful contexts at
+    #    present).
+    class BlockHandler(TagHandler):
+        allowedTags = [ ]
+        allowedContexts = [ 'global', 'class' ]
+        def merge(self, doc, parent, guessedName):
+            for k in doc:
+                parent[k] = doc[k]
+
+    class ModuleBlockHandler(BlockHandler):
+        takesArg = True
+        _pat = re.compile('^(\w+)$|^(?:([\w.\[\]]+)\s*\n)?\s*(.*)$', re.S);
+        def parse(self, text):
+            m = self._pat.match(text)
+            if not m:
+                raise RuntimeError("Malformed args to %s: %s" %
+                                   (self.tagName, (text[:20] + "...")))
+            a = { }
+            if m.group(1):
+                a["name"] = m.group(1)
+            else:
+                if m.group(2):
+                    a["name"] = m.group(2)
+                if m.group(3):
+                    a["desc"] = m.group(3)
+            return a
+
+        def attach(self, obj, current):
+            if "name" in obj:
+                current['module'] = obj["name"]
+            if "desc" in obj:
+                if "desc" in current:
+                    obj['desc'] = current['desc'] + "\n\n" + obj['desc']
+                current['desc'] = obj['desc']
+
+    class FunctionBlockHandler(ModuleBlockHandler):
+        def attach(self, obj, current):
+            if "name" in obj:
+                current['name'] = obj["name"]
+            if "desc" in obj:
+                if "desc" in current:
+                    obj['desc'] = current['desc'] + "\n\n" + obj['desc']
+                current['desc'] = obj['desc']
+
+        def merge(self, doc, parent, guessedName):
+            if "name" not in doc:
+                doc['name'] = guessedName
+            if not "functions" in parent:
+                parent["functions"] = []
+            parent["functions"].append(doc)
+
+    class ConstructorBlockHandler(BlockHandler):
+        takesArg = True
+        argOptional = True
+        def attach(self, obj, current):
+            if obj:
+                if "desc" in current:
+                    obj = current['desc'] + "\n\n" + obj
+                current['desc'] = obj
+
+        def merge(self, doc, parent, guessedName):
+            parent["constructor"] = doc
+
+    class ClassBlockHandler(FunctionBlockHandler):
+        def merge(self, doc, parent, guessedName):
+            if "name" not in doc:
+                doc['name'] = guessedName
+            if not "classes" in parent:
+                parent["classes"] = []
+            parent["classes"].append(doc)
+
+    class EndClassBlockHandler(BlockHandler):
+        def attach(self, obj, current):
+            pass
+        def merge(self, doc, parent, guessedName):
+            pass
+
+    class PropertyBlockHandler(ParamTagHandler, BlockHandler):
+        def attach(self, obj, current):
+            for x in obj:
+                current[x] = obj[x]
+
+        def merge(self, doc, parent, guessedName):
+            if "name" not in doc:
+                doc['name'] = guessedName
+            if not "properties" in parent:
+                parent["properties"] = []
+            parent["properties"].append(doc)
+
+
+
 
 if __name__ == '__main__':
     import sys
