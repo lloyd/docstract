@@ -1,5 +1,5 @@
 /**
- * when defining the @type of a property, you chose to omit braces
+ * when defining the @@type of a property, you chose to omit braces
  */
 
 /**

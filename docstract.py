@@ -25,11 +25,12 @@ class DocStract():
 
         # after extracting the comment, fix it up (remove *s and leading spaces)
         self.blockFilterPat = re.compile('^\s*\* ?', re.M)
+        self.unescapeTagPat = re.compile('@@(?=\w+)', re.M)
 
         # the pattern used to split a comment block to create our token stream
         # this will currently break if there are ampersands in the comments if there
         # is a space before it
-        self.tokenizePat = re.compile('^\s?(@\w+)', re.M);
+        self.tokenizePat = re.compile('(?<!@)(@\w+)', re.M);
 
         # heuristic type and name guessing stuff, applied to the first
         # non-whitespace line after the doc block.  designed for commonjs
@@ -162,9 +163,11 @@ class DocStract():
 
         # Step 1: split the chunk of text into a token stream, each token
         # is either a tag /@\w+/ or a chunk of text (tag argument).
-        # whitespace on either side of tokens is stripped
+        # whitespace on either side of tokens is stripped.  Also, unescape
+        # @@tags.
         tokens = self.tokenizePat.split(block)
         tokens = [n.strip() for n in tokens if n.strip()]
+        tokens = [self.unescapeTagPat.sub("@", t) for t in tokens]
 
         # Step 2: initialize an object which will hold the intermediate
         # representation of parsed block data.
