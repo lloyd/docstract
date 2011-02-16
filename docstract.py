@@ -102,6 +102,11 @@ class DocStract():
         # is this a blocktype declaration?
         if cur in self.blockTypes:
             handler = self.blockTypes[cur]
+            if currentObj['blockHandler']:
+                raise RuntimeError("%s and %s may " %
+                                   (currentObj['blockHandler'].tagName,
+                                    handler.tagName) +
+                                   "not occur in same documentation block")
             currentObj['blockHandler'] = handler
         elif cur in self.tags:
             handler = self.tags[cur]
