@@ -235,6 +235,11 @@ class DocStract():
                 handler = self.tags[tag] if tag in self.tags else self.blockTypes[tag]
                 handler.attach(v, doc)
 
+        # special case to allow for lazy class closing (omit @endclass when
+        # many classes are being declared in a row)
+        if not self._currentClass == None and parseData['blockHandler'].tagName == '@class':
+            data = globalData 
+
         parseData['blockHandler'].merge(doc, data, guessedName)
 
         # special case for classes!
