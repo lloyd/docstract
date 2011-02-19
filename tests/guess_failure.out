@@ -1,0 +1,28 @@
+{
+  "args": [
+    "Can't determine what this block documents (from @function, @module, @property, @class)"
+  ], 
+  "exception_type": "<type 'exceptions.RuntimeError'>", 
+  "stack": [
+    [
+      "<module>", 
+      "got = ds.extractFromFile(os.path.join(testDir, test + \".js\"))"
+    ], 
+    [
+      "extractFromFile", 
+      "data = self.extract(contents)"
+    ], 
+    [
+      "extract", 
+      "self._analyzeBlock(block, context, firstBlock, data)"
+    ], 
+    [
+      "_analyzeBlock", 
+      "guessedType = self._guessBlockType(firstBlock, codeChunk, thisContext, parseData['tagData'].keys())"
+    ], 
+    [
+      "_guessBlockType", 
+      "raise RuntimeError(\"Can't determine what this block documents (from %s)\" % \", \".join(possibilities))"
+    ]
+  ]
+}
