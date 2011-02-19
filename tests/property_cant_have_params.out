@@ -1,6 +1,7 @@
 {
   "args": [
-    "@param not allowed in @property block"
+    "@param not allowed in @property block at line 3", 
+    []
   ], 
   "exception_type": "<type 'exceptions.RuntimeError'>", 
   "stack": [

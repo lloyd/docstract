@@ -1,6 +1,7 @@
 {
   "args": [
-    "class 'Foo' redefined"
+    "class 'Foo' redefined at line 5", 
+    []
   ], 
   "exception_type": "<type 'exceptions.RuntimeError'>", 
   "stack": [

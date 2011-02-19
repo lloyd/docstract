@@ -1,6 +1,7 @@
 {
   "args": [
-    "@module not allowed in class context"
+    "@module not allowed in class context at line 7", 
+    []
   ], 
   "exception_type": "<type 'exceptions.RuntimeError'>", 
   "stack": [

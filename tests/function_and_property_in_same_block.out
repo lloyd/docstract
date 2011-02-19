@@ -1,6 +1,7 @@
 {
   "args": [
-    "@function and @property may not occur in same documentation block"
+    "@function and @property may not occur in same documentation block at line 4", 
+    []
   ], 
   "exception_type": "<type 'exceptions.RuntimeError'>", 
   "stack": [

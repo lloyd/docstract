@@ -338,7 +338,17 @@ class DocStract():
                 block = self.blockFilterPat.sub("", m.group(2)).strip()
                 context = m.group(4).strip()
                 # data will be mutated!
-                self._analyzeBlock(block, context, firstBlock, data, lineStart, line)
+                try:
+                    self._analyzeBlock(block, context, firstBlock, data, lineStart, line)
+                except RuntimeError, exc:
+                    args = exc.args
+                    if not args:
+                        arg0 = ''
+                    else:
+                        arg0 = args[0]
+                    arg0 += ' at line %s' % lineStart
+                    exc.args = (arg0, args[1:])
+                    raise
                 firstBlock = False
 
         return data
