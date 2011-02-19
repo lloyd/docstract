@@ -5,8 +5,16 @@
   "properties": [
     {
       "desc": "The port number of the URL, `null` if none was specified.", 
-      "type": "integer",
-      "name": "port"
+      "name": "port", 
+      "source_lines": [
+        3, 
+        6
+      ], 
+      "type": "integer"
     }
+  ], 
+  "source_lines": [
+    1, 
+    2
   ]
 }

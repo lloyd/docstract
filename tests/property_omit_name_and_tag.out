@@ -5,7 +5,15 @@
   "properties": [
     {
       "desc": "a property which exposes a name to you", 
-      "name": "name"
+      "name": "name", 
+      "source_lines": [
+        6, 
+        8
+      ]
     }
+  ], 
+  "source_lines": [
+    1, 
+    5
   ]
 }

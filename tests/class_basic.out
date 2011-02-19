@@ -2,10 +2,18 @@
   "classes": [
     {
       "desc": "A class which parses a url and exposes its various\ncomponents separately.", 
-      "name": "URL"
+      "name": "URL", 
+      "source_lines": [
+        5, 
+        10
+      ]
     }
   ], 
   "desc": "A test of basic class parsing", 
   "filename": "tests/class_basic.js", 
-  "module": "class_basic"
+  "module": "class_basic", 
+  "source_lines": [
+    1, 
+    4
+  ]
 }

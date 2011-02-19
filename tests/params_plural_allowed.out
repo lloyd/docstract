@@ -11,8 +11,16 @@
           "name": "url", 
           "type": "string"
         }
+      ], 
+      "source_lines": [
+        6, 
+        9
       ]
     }
   ], 
-  "module": "params_plural_allowed"
+  "module": "params_plural_allowed", 
+  "source_lines": [
+    1, 
+    5
+  ]
 }

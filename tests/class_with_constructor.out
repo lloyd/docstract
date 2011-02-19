@@ -9,13 +9,25 @@
             "name": "bar", 
             "type": "foo"
           }
+        ], 
+        "source_lines": [
+          11, 
+          16
         ]
       }, 
       "desc": "A class which parses a url and exposes its various\ncomponents separately.", 
-      "name": "URL"
+      "name": "URL", 
+      "source_lines": [
+        5, 
+        10
+      ]
     }
   ], 
   "desc": "A test of basic class parsing", 
   "filename": "tests/class_with_constructor.js", 
-  "module": "class_with_constructor"
+  "module": "class_with_constructor", 
+  "source_lines": [
+    1, 
+    4
+  ]
 }

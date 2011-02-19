@@ -1,5 +1,9 @@
 {
   "desc": "Emails should not be interpreted as tags, so lloyd@hilaiel.com\nshouldn't be broken at @hilaiel", 
   "filename": "tests/email_in_text_block.js", 
-  "module": "email_in_text_block"
+  "module": "email_in_text_block", 
+  "source_lines": [
+    1, 
+    2
+  ]
 }

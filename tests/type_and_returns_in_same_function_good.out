@@ -8,8 +8,16 @@
       "returns": {
         "desc": "The name of the current user", 
         "type": "String"
-      }
+      }, 
+      "source_lines": [
+        4, 
+        9
+      ]
     }
   ], 
-  "module": "type_and_returns_in_same_function_good"
+  "module": "type_and_returns_in_same_function_good", 
+  "source_lines": [
+    1, 
+    3
+  ]
 }

@@ -8,7 +8,11 @@
           "name": "bar", 
           "returns": {
             "desc": "nothing."
-          }
+          }, 
+          "source_lines": [
+            17, 
+            22
+          ]
         }
       ], 
       "name": "URL", 
@@ -16,12 +20,24 @@
         {
           "desc": "the foo property of my url classs", 
           "name": "foo", 
+          "source_lines": [
+            11, 
+            16
+          ], 
           "type": "string"
         }
+      ], 
+      "source_lines": [
+        5, 
+        10
       ]
     }
   ], 
   "desc": "A simple class with a property and a function", 
   "filename": "tests/class_with_prop_and_func.js", 
-  "module": "class_with_prop_and_func"
+  "module": "class_with_prop_and_func", 
+  "source_lines": [
+    1, 
+    4
+  ]
 }

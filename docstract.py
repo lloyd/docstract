@@ -20,8 +20,12 @@ import types
 
 class DocStract():
     def __init__(self):
-        # the pattern for extracting a documentation block and the next line
-        self.docBlockPat = re.compile('(/\*\*)(.*?)(\*/)([\s\n]*[^\/\n]*)?', re.S)
+        # the patterns for finding and processing documentation blocks (and the source line
+        # Note: these two patterns are identical, except the latter captures groups.  The
+        # first is used to split a source file into chunks of text which are either doc blocks
+        # or source code, the second extracts information from doc blocks.
+        self.docBlockFindPat =    re.compile('(/\*\*  .*?  \*/ (?:[\s\n]*[^\/\n]*)?)', re.S | re.X)
+        self.docBlockProcessPat = re.compile('(/\*\*)(.*?)(\*/)(  [\s\n]*[^\/\n]*)? ', re.S | re.X)
 
         # after extracting the comment, fix it up (remove *s and leading spaces)
         self.blockFilterPat = re.compile('^\s*\* ?', re.M)
@@ -194,7 +198,7 @@ class DocStract():
 
         raise RuntimeError("Can't determine what this block documents (from %s)" % ", ".join(possibilities))
 
-    def _analyzeBlock(self, block, codeChunk, firstBlock, data):
+    def _analyzeBlock(self, block, codeChunk, firstBlock, data, lineStart, lineEnd):
         # Ye' ol' block analysis process.  block at this point contains
         # a chunk of text that has already had comment markers stripped out.
 
@@ -284,6 +288,7 @@ class DocStract():
         if not self._currentClass == None and parseData['blockHandler'].tagName == '@class':
             data = globalData 
 
+        parseData['blockHandler'].setLineNumber(lineStart, lineEnd, doc)
         parseData['blockHandler'].merge(doc, data, guessedName)
 
         # special case for classes!
@@ -322,12 +327,19 @@ class DocStract():
 
         # now parse out and combine comment blocks
         firstBlock = True
-        for m in self.docBlockPat.finditer(contents):
-            block = self.blockFilterPat.sub("", m.group(2)).strip()
-            context = m.group(4).strip()
-            # data will be mutated!
-            self._analyzeBlock(block, context, firstBlock, data)
-            firstBlock = False
+        line = 0
+        for text in self.docBlockFindPat.split(contents):
+            lineStart = line + 1
+            line += text.count('\n')
+
+            # if this isn't a documentation block, carry on
+            m = self.docBlockProcessPat.match(text)
+            if m:
+                block = self.blockFilterPat.sub("", m.group(2)).strip()
+                context = m.group(4).strip()
+                # data will be mutated!
+                self._analyzeBlock(block, context, firstBlock, data, lineStart, line)
+                firstBlock = False
 
         return data
 
@@ -442,7 +454,6 @@ class ReturnTagHandler(TagHandler):
                 else:
                     rv['desc'] = m.group(2)
         else:
-            print "no match"
             raise RuntimeError("Malformed args to %s: %s" %
                                (self.tagName, (text[:20] + "...")))
 
@@ -502,6 +513,8 @@ class BlockHandler(TagHandler):
     def merge(self, doc, parent, guessedName):
         for k in doc:
             parent[k] = doc[k]
+    def setLineNumber(self, lineStart, lineEnd, doc):
+        doc['source_lines'] = [ lineStart, lineEnd ]
 
 class ModuleBlockHandler(BlockHandler):
     allowedTags = [ '@desc', '@see' ]

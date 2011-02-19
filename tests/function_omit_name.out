@@ -4,8 +4,16 @@
   "functions": [
     {
       "desc": "a function which converts URLs to filenames", 
-      "name": "toFilename"
+      "name": "toFilename", 
+      "source_lines": [
+        7, 
+        11
+      ]
     }
   ], 
-  "module": "function_omit_name"
+  "module": "function_omit_name", 
+  "source_lines": [
+    1, 
+    6
+  ]
 }

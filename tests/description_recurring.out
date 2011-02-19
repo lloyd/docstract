@@ -16,8 +16,16 @@
           "name": "baz", 
           "type": "string"
         }
+      ], 
+      "source_lines": [
+        11, 
+        19
       ]
     }
   ], 
-  "module": "description_recurring"
+  "module": "description_recurring", 
+  "source_lines": [
+    1, 
+    10
+  ]
 }

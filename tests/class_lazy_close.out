@@ -1,13 +1,25 @@
 {
   "classes": [
     {
-      "name": "Foo"
+      "name": "Foo", 
+      "source_lines": [
+        5, 
+        5
+      ]
     }, 
     {
-      "name": "Bar"
+      "name": "Bar", 
+      "source_lines": [
+        6, 
+        6
+      ]
     }
   ], 
   "desc": "you don't need to specify @endclass if you're jumping into\n a second class def.  And yeah, this might change if we support\n nested classes", 
   "filename": "tests/class_lazy_close.js", 
-  "module": "class_lazy_close"
+  "module": "class_lazy_close", 
+  "source_lines": [
+    1, 
+    4
+  ]
 }

@@ -15,6 +15,10 @@
             "type": "string"
           }
         ], 
+        "source_lines": [
+          24, 
+          35
+        ], 
         "throws": [
           {
             "desc": "If `source` is not a valid URI."
@@ -29,7 +33,11 @@
           "returns": {
             "desc": "The URL as a string.", 
             "type": "string"
-          }
+          }, 
+          "source_lines": [
+            56, 
+            60
+          ]
         }
       ], 
       "name": "URL", 
@@ -37,28 +45,52 @@
         {
           "desc": "The name of the protocol in the URL.", 
           "name": "scheme", 
+          "source_lines": [
+            36, 
+            39
+          ], 
           "type": "string"
         }, 
         {
           "desc": "The username:password part of the URL, `null` if not present.", 
           "name": "userPass", 
+          "source_lines": [
+            40, 
+            43
+          ], 
           "type": "string"
         }, 
         {
           "desc": "The host of the URL, `null` if not present.", 
           "name": "host", 
+          "source_lines": [
+            44, 
+            47
+          ], 
           "type": "string"
         }, 
         {
           "desc": "The port number of the URL, `null` if none was specified.", 
           "name": "port", 
+          "source_lines": [
+            48, 
+            51
+          ], 
           "type": "integer"
         }, 
         {
           "desc": "The path component of the URL.", 
           "name": "path", 
+          "source_lines": [
+            52, 
+            55
+          ], 
           "type": "string"
         }
+      ], 
+      "source_lines": [
+        19, 
+        23
       ]
     }
   ], 
@@ -78,7 +110,11 @@
       "returns": {
         "desc": "A string representation of a URL.", 
         "type": "string"
-      }
+      }, 
+      "source_lines": [
+        5, 
+        11
+      ]
     }, 
     {
       "desc": "build a filename from a url.", 
@@ -93,8 +129,16 @@
       "returns": {
         "desc": "A string representation of a URL.", 
         "type": "string"
-      }
+      }, 
+      "source_lines": [
+        12, 
+        18
+      ]
     }
   ], 
-  "module": "class_full"
+  "module": "class_full", 
+  "source_lines": [
+    1, 
+    4
+  ]
 }

@@ -4,8 +4,16 @@
   "functions": [
     {
       "desc": "Transmorgifies the input", 
-      "name": "transmorgify"
+      "name": "transmorgify", 
+      "source_lines": [
+        5, 
+        7
+      ]
     }
   ], 
-  "module": "guess_basic_function"
+  "module": "guess_basic_function", 
+  "source_lines": [
+    1, 
+    4
+  ]
 }

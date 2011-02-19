@@ -8,7 +8,11 @@
       "returns": {
         "desc": "A string.", 
         "type": "string"
-      }
+      }, 
+      "source_lines": [
+        6, 
+        11
+      ]
     }, 
     {
       "desc": "a function which converts URLs to filenames", 
@@ -16,7 +20,11 @@
       "returns": {
         "desc": "A String.", 
         "type": "string"
-      }
+      }, 
+      "source_lines": [
+        12, 
+        17
+      ]
     }, 
     {
       "desc": "a function which converts URLs to filenames", 
@@ -24,8 +32,16 @@
       "returns": {
         "desc": "Yeah, A String.", 
         "type": "string"
-      }
+      }, 
+      "source_lines": [
+        18, 
+        22
+      ]
     }
   ], 
-  "module": "function_supports_type_or_return_or_returns"
+  "module": "function_supports_type_or_return_or_returns", 
+  "source_lines": [
+    1, 
+    5
+  ]
 }

@@ -7,8 +7,16 @@
       "name": "getValue", 
       "returns": {
         "type": "string"
-      }
+      }, 
+      "source_lines": [
+        4, 
+        6
+      ]
     }
   ], 
-  "module": "guess_function"
+  "module": "guess_function", 
+  "source_lines": [
+    1, 
+    3
+  ]
 }

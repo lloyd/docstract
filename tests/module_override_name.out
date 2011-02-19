@@ -1,5 +1,9 @@
 {
+  "desc": "This module overrides the logic that assumes that the filename\n*is* the module name.", 
   "filename": "tests/module_override_name.js", 
-  "module": "some_other_name",
-  "desc": "This module overrides the logic that assumes that the filename\n*is* the module name."
+  "module": "some_other_name", 
+  "source_lines": [
+    1, 
+    6
+  ]
 }

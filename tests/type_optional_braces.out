@@ -5,11 +5,23 @@
   "properties": [
     {
       "name": "foo", 
+      "source_lines": [
+        5, 
+        9
+      ], 
       "type": "string"
     }, 
     {
       "name": "bar", 
+      "source_lines": [
+        10, 
+        13
+      ], 
       "type": "string"
     }
+  ], 
+  "source_lines": [
+    1, 
+    4
   ]
 }

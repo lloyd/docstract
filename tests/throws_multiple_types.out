@@ -4,6 +4,10 @@
   "functions": [
     {
       "name": "throweyFunc", 
+      "source_lines": [
+        5, 
+        11
+      ], 
       "throws": [
         {
           "desc": "When you are sleeping"
@@ -21,5 +25,9 @@
       ]
     }
   ], 
-  "module": "throws_multiple_types"
+  "module": "throws_multiple_types", 
+  "source_lines": [
+    1, 
+    4
+  ]
 }
