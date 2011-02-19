@@ -1,0 +1,14 @@
+{
+  "desc": "if @return appears, we should be able to guess\n it's a function", 
+  "filename": "tests/guess_function.js", 
+  "functions": [
+    {
+      "desc": "a guessable function documentation block", 
+      "name": "getValue", 
+      "returns": {
+        "type": "string"
+      }
+    }
+  ], 
+  "module": "guess_function"
+}

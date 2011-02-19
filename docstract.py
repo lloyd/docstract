@@ -36,11 +36,6 @@ class DocStract():
         # is a space before it
         self.tokenizePat = re.compile('(?<![@\w])(@\w+)', re.M);
 
-        # heuristic type and name guessing stuff, applied to the first
-        # non-whitespace line after the doc block.  designed for commonjs
-        # modules (note the 'exports').
-        self.findExportsPat = re.compile('(?:^|\s)exports\.(\w+)\s', re.M);
-
         # block types.  Each document block is of one of these types.
         self.blockTypes = {
             '@class':       self.ClassBlockHandler("@class"),
@@ -81,6 +76,21 @@ class DocStract():
             '@throws': self.ThrowsTagHandler('@throws'),
             '@type':   self.TypeTagHandler('@type'),
             }
+
+        # these are a list of functions that examine extraction state and try to guess
+        # what type of construct a documentation block documents
+        self.typeGuessers = [
+            isFunctionIfKeywordInCodeTypeGuesser,
+            assignmentIsProbablyPropertyTypeGuesser,
+            typeWithoutReturnsIsProbablyPropertyTypeGuesser,
+            firstBlockIsModuleTypeGuesser
+            ]
+
+        # these are a list of functions that, given a block type and subsequent chunk of code,
+        # try to guess the name of the construct being documented
+        self.nameGuessers = [
+            commonJSNameGuesser
+            ]
 
         # a little bit of context that allows us to understand when we're parsing classes
         # XXX: we could make this an array and a couple code tweaks if we cared
@@ -145,25 +155,45 @@ class DocStract():
         else:
             raise RuntimeError("unrecognized tag: %s" % cur)
 
-    def _guessBlockType(self, firstBlock, context, tags):
-        guessedName = None
-        guessedType = None
-        # first let's see if there's an exports statement after the block
-        m = self.findExportsPat.search(context)
-        if m:
-            guessedName = m.group(1)
+    def _guessBlockName(self, codeChunk, blockType):
+        # given the first line of source code after the block, and it's type
+        # we'll invoke our name guessers to try to figure out the name of the
+        # construct being documented
 
-            # we'll only try to guess type if there's an exports statement
-            if context.find("function") >= 0: 
-                guessedType = '@function'
-            else:
-                guessedType = '@property'
-        elif firstBlock:
-            guessedType = '@module'
+        # now let's invoke our type guessers, in order
+        for func in self.nameGuessers:
+            t = func(codeChunk, blockType)
+            if t != None:
+                return t
 
-        return guessedName, guessedType
+        return None
 
-    def _analyzeBlock(self, block, context, firstBlock, data):
+    def _guessBlockType(self, firstBlock, codeChunk, context, tags):
+        # first we'll prune possibilities by figuring out which supported blocktypes
+        # are valid in the current context, and support all of the required tags
+        tagSet = set(tags)
+        possibilities = [ ]
+        for bt in self.blockTypes:
+            bt = self.blockTypes[bt]
+            if context not in bt.allowedContexts:
+                continue
+            if not tagSet.issubset(bt.allowedTags):
+                continue
+            possibilities.append(bt.tagName)
+
+        # if we've reduced to exactly one possibility, then we don't need to guess
+        if len(possibilities) == 1:
+            return possibilities[0]
+
+        # now let's invoke our type guessers, in order
+        for func in self.typeGuessers:
+            t = func(firstBlock, codeChunk, context, tags, possibilities)
+            if t != None:
+                return t
+
+        raise RuntimeError("Can't determine what this block documents (from %s)" % ", ".join(possibilities))
+
+    def _analyzeBlock(self, block, codeChunk, firstBlock, data):
         # Ye' ol' block analysis process.  block at this point contains
         # a chunk of text that has already had comment markers stripped out.
 
@@ -201,17 +231,24 @@ class DocStract():
         while len(tokens):
             self._consumeToks(tokens, parseData)
 
-        # Step 6: If the content block type is not known ('property', 'class',
-        #         'function', etc), then let's apply some heuristics to guess
-        #         what the documentation author *really* meant.
-        (guessedName, guessedType) = self._guessBlockType(firstBlock, context, parseData['tagData'].keys())
+        thisContext = "class" if not self._currentClass == None else "global"
 
+        # Step 6: Heuristics!  Apply a set of functions which use the current state of
+        #         documentation extractor and some source code to figure out what
+        #         type of construct  (@function, @property, etc) this documentation
+        #         block is documenting, and what its name is.
+
+        # only invoke guessing logic if type wasn't explicitly declared
         if parseData['blockHandler'] == None:
-            if guessedType == None:
-                raise RuntimeError("Ambiguous documentation block: %s..." % block[:20])
-            elif guessedType not in self.blockTypes:
+            guessedType = self._guessBlockType(firstBlock, codeChunk, thisContext, parseData['tagData'].keys())
+        
+            if guessedType not in self.blockTypes:
                 raise RuntimeError("Don't know how to handle a '%s' documentation block" % guessedType)
             parseData['blockHandler'] = self.blockTypes[guessedType]
+
+        # always try to guess the name, a name guesser has the first interesting line of code
+        # after the documentation block and the type of block (it's string name) to work with
+        guessedName = self._guessBlockName(codeChunk, parseData['blockHandler'].tagName)
 
         # Step 7: Validation phase!  Not all tags are allowed in all types of
         # documentation blocks.  like '@returns' inside a '@classend' block
@@ -219,7 +256,6 @@ class DocStract():
         # sane.
 
         # first check that this doc block type is valid in present context
-        thisContext = "class" if not self._currentClass == None else "global"
         if thisContext not in parseData['blockHandler'].allowedContexts:
             raise RuntimeError("%s not allowed in %s context" %
                                (parseData['blockHandler'].tagName,
@@ -287,7 +323,7 @@ class DocStract():
         firstBlock = True
         for m in self.docBlockPat.finditer(contents):
             block = self.blockFilterPat.sub("", m.group(2)).strip()
-            context = m.group(4)
+            context = m.group(4).strip()
             # data will be mutated!
             self._analyzeBlock(block, context, firstBlock, data)
             firstBlock = False
@@ -509,6 +545,8 @@ class DocStract():
         def merge(self, doc, parent, guessedName):
             if "name" not in doc:
                 doc['name'] = guessedName
+            if doc['name'] == None:
+                raise RuntimeError("can't determine function name")                
             if not "functions" in parent:
                 parent["functions"] = []
             for f in parent["functions"]:
@@ -532,6 +570,7 @@ class DocStract():
             parent["constructor"] = doc
 
     class ClassBlockHandler(FunctionBlockHandler):
+        allowedTags = [ '@see', '@desc' ]
         def merge(self, doc, parent, guessedName):
             if "name" not in doc:
                 doc['name'] = guessedName
@@ -564,6 +603,43 @@ class DocStract():
                     raise RuntimeError("property '%s' redefined" % doc["name"])
             parent["properties"].append(doc)
 
+
+# A type guesser that assumes the first documentation block of a source file is
+# probably a '@module' documentation block
+def firstBlockIsModuleTypeGuesser(firstBlock, codeChunk, context, tags, possibilities):
+    if '@module' in possibilities and firstBlock:
+        return '@module'
+    return None
+
+# A type guesser that checks the codeChunk for appearance of the keyword 'function'
+_functionKeywordPat = re.compile('(?<!\w)function(?!\w)');
+def isFunctionIfKeywordInCodeTypeGuesser(firstBlock, codeChunk, context, tags, possibilities):
+    if '@function' in possibilities and _functionKeywordPat.search(codeChunk):
+        return '@function'
+    return None
+
+# A type guesser that assumes '@property' based on the presence of @type and the absence of @return.
+def typeWithoutReturnsIsProbablyPropertyTypeGuesser(firstBlock, codeChunk, context, tags, possibilities):
+    if '@type' in tags and '@return' not in tags and '@property' in possibilities:
+        return '@property'
+    return None
+
+# a guesser which assumes if a documentation block occurs before an assignment, its probably a
+# property (this is a bit questionable, folks)
+_assignmentPat = re.compile('^.*=.*;\s*$', re.M);
+def assignmentIsProbablyPropertyTypeGuesser(firstBlock, codeChunk, context, tags, possibilities):
+    if '@property' in possibilities and _assignmentPat.match(codeChunk):
+        return '@property'
+    return None
+
+# A name guesser that looks for exports.XXX and assumes XXX is the name we want
+# define the pattern globally in this module so we don't recompile it all the time
+_findExportsPat = re.compile('(?:^|\s)exports\.(\w+)\s', re.M);
+def commonJSNameGuesser(codeChunk, blockType):
+    m = _findExportsPat.search(codeChunk)
+    if m:
+        return m.group(1)
+    return None
 
 if __name__ == '__main__':
     import sys

@@ -4,7 +4,7 @@
   "functions": [
     {
       "desc": "This function returns a String.", 
-      "name": null, 
+      "name": "imDocumentedWithBothTypeAndReturn", 
       "returns": {
         "desc": "The name of the current user", 
         "type": "String"

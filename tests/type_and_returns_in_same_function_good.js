@@ -2,7 +2,7 @@
  *  type of return value (like in jsdoc) .*/
 
 /**
- * @function
+ * @function imDocumentedWithBothTypeAndReturn
  * This function returns a String.
  * @return The name of the current user
  * @type String
