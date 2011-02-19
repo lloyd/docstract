@@ -22,7 +22,7 @@
     ], 
     [
       "attach", 
-      "DocStract.ReturnTagHandler.attach(self, obj, current, blockType)"
+      "ReturnTagHandler.attach(self, obj, current, blockType)"
     ], 
     [
       "attach", 
