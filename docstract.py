@@ -89,6 +89,7 @@ class DocStract():
         # these are a list of functions that, given a block type and subsequent chunk of code,
         # try to guess the name of the construct being documented
         self.nameGuessers = [
+            standardFunctionNameGuesser,
             commonJSNameGuesser
             ]
 
@@ -637,6 +638,13 @@ def assignmentIsProbablyPropertyTypeGuesser(firstBlock, codeChunk, context, tags
 _findExportsPat = re.compile('(?:^|\s)exports\.(\w+)\s', re.M);
 def commonJSNameGuesser(codeChunk, blockType):
     m = _findExportsPat.search(codeChunk)
+    if m:
+        return m.group(1)
+    return None
+
+_standardFunctionPat = re.compile('^\s*function\s*(\w+)\(.*$');
+def standardFunctionNameGuesser(codeChunk, blockType):
+    m = _standardFunctionPat.match(codeChunk)
     if m:
         return m.group(1)
     return None
