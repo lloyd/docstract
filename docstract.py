@@ -94,6 +94,7 @@ class DocStract():
         # try to guess the name of the construct being documented
         self.nameGuessers = [
             standardFunctionNameGuesser,
+            objectPropertyNameGuesser,
             commonJSNameGuesser
             ]
 
@@ -668,6 +669,13 @@ def commonJSNameGuesser(codeChunk, blockType):
 _standardFunctionPat = re.compile('^\s*function\s*(\w+)\(.*$');
 def standardFunctionNameGuesser(codeChunk, blockType):
     m = _standardFunctionPat.match(codeChunk)
+    if m:
+        return m.group(1)
+    return None
+
+_objectPropertyPat = re.compile('^\s*(\w+)\s*:.*$');
+def objectPropertyNameGuesser(codeChunk, blockType):
+    m = _objectPropertyPat.match(codeChunk)
     if m:
         return m.group(1)
     return None

@@ -1,0 +1,14 @@
+{
+  "filename": "tests/guess_name_object_property.js", 
+  "functions": [
+    {
+      "desc": "Stops the server from accepting new connections. This function is\nasynchronous, the server is finally closed when the server emits a\n'close' event.", 
+      "name": "destroy", 
+      "source_lines": [
+        4, 
+        8
+      ]
+    }
+  ], 
+  "module": "guess_name_object_property"
+}
