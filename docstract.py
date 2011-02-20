@@ -215,7 +215,7 @@ class DocStract():
         # whitespace on either side of tokens is stripped.  Also, unescape
         # @@tags.
         tokens = self.tokenizePat.split(block)
-        tokens = [n.strip() for n in tokens if n.strip()]
+        tokens = [n.lstrip(" \t").lstrip('\r\n').rstrip() for n in tokens if n.strip()]
         tokens = [self.unescapeTagPat.sub("@", t) for t in tokens]
 
         # Step 2: initialize an object which will hold the intermediate
