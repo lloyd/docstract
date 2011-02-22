@@ -84,6 +84,7 @@ class DocStract():
         # these are a list of functions that examine extraction state and try to guess
         # what type of construct a documentation block documents
         self.typeGuessers = [
+            hasGetSetterIsPropertyTypeGuesser,
             isFunctionIfKeywordInCodeTypeGuesser,
             assignmentIsProbablyPropertyTypeGuesser,
             typeWithoutReturnsIsProbablyPropertyTypeGuesser,
@@ -94,6 +95,7 @@ class DocStract():
         # try to guess the name of the construct being documented
         self.nameGuessers = [
             standardFunctionNameGuesser,
+            getSetterNameGuesser,
             objectPropertyNameGuesser,
             commonJSNameGuesser
             ]
@@ -657,6 +659,12 @@ def assignmentIsProbablyPropertyTypeGuesser(firstBlock, codeChunk, context, tags
         return '@property'
     return None
 
+_hasGetSetterPat = re.compile('__define[GS]etter__');
+def hasGetSetterIsPropertyTypeGuesser(firstBlock, codeChunk, context, tags, possibilities):
+    if '@property' in possibilities and _hasGetSetterPat.search(codeChunk):
+        return '@property'
+    return None
+
 # A name guesser that looks for exports.XXX and assumes XXX is the name we want
 # define the pattern globally in this module so we don't recompile it all the time
 _findExportsPat = re.compile('(?:^|\s)exports\.(\w+)\s', re.M);
@@ -679,6 +687,14 @@ def objectPropertyNameGuesser(codeChunk, blockType):
     if m:
         return m.group(1)
     return None
+
+_getSetterNameGuesserPat = re.compile(r'''__define[GS]etter__\s* \( \s* (?:"(\w+)" | '(\w+)') ''', re.X);
+def getSetterNameGuesser(codeChunk, blockType):
+    m = _getSetterNameGuesserPat.search(codeChunk)
+    if m:
+        return m.group(1) if m.group(1) else m.group(2)
+    return None
+
 
 if __name__ == '__main__':
     import sys

@@ -1,0 +1,22 @@
+{
+  "filename": "tests/guess_getsetter.js", 
+  "module": "guess_getsetter", 
+  "properties": [
+    {
+      "desc": "True iff the stream is closed.", 
+      "name": "closed", 
+      "source_lines": [
+        4, 
+        6
+      ]
+    }, 
+    {
+      "desc": "True iff the stream is open.", 
+      "name": "opened", 
+      "source_lines": [
+        11, 
+        13
+      ]
+    }
+  ]
+}
