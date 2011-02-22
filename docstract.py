@@ -86,9 +86,9 @@ class DocStract():
         self.typeGuessers = [
             hasGetSetterIsPropertyTypeGuesser,
             isFunctionIfKeywordInCodeTypeGuesser,
+            firstBlockIsModuleTypeGuesser,
             assignmentIsProbablyPropertyTypeGuesser,
-            typeWithoutReturnsIsProbablyPropertyTypeGuesser,
-            firstBlockIsModuleTypeGuesser
+            typeWithoutReturnsIsProbablyPropertyTypeGuesser
             ]
 
         # these are a list of functions that, given a block type and subsequent chunk of code,

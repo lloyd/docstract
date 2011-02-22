@@ -1,0 +1,35 @@
+{
+  "desc": "Allows one to control fullscreen view for the main application window", 
+  "filename": "tests/guess_firstblock_precedence_over_assignment.js", 
+  "functions": [
+    {
+      "desc": "Size the main application window to consume the full screen", 
+      "name": "enable", 
+      "source_lines": [
+        12, 
+        14
+      ]
+    }, 
+    {
+      "desc": "Disable fullscreen mode (noop if it wasn't enabled)", 
+      "name": "disable", 
+      "source_lines": [
+        19, 
+        21
+      ]
+    }, 
+    {
+      "desc": "Toggle fullscreen.", 
+      "name": "toggle", 
+      "source_lines": [
+        26, 
+        28
+      ]
+    }
+  ], 
+  "module": "guess_firstblock_precedence_over_assignment", 
+  "source_lines": [
+    6, 
+    9
+  ]
+}
