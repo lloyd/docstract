@@ -350,7 +350,7 @@ class DocStract():
                     else:
                         arg0 = args[0]
                     arg0 += ' at line %s' % lineStart
-                    exc.args = (arg0, args[1:])
+                    exc.args = (arg0,) + args[1:]
                     raise
                 firstBlock = False
 

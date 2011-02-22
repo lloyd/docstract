@@ -1,7 +1,6 @@
 {
   "args": [
-    "Return type redefined (@type and @returns in same function block?) at line 4", 
-    []
+    "Return type redefined (@type and @returns in same function block?) at line 4"
   ], 
   "exception_type": "<type 'exceptions.RuntimeError'>", 
   "stack": [

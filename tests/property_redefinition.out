@@ -1,7 +1,6 @@
 {
   "args": [
-    "property 'Foo' redefined at line 4", 
-    []
+    "property 'Foo' redefined at line 4"
   ], 
   "exception_type": "<type 'exceptions.RuntimeError'>", 
   "stack": [

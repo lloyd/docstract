@@ -1,7 +1,6 @@
 {
   "args": [
-    "@constructor not allowed in global context at line 4", 
-    []
+    "@constructor not allowed in global context at line 4"
   ], 
   "exception_type": "<type 'exceptions.RuntimeError'>", 
   "stack": [

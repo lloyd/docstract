@@ -1,7 +1,6 @@
 {
   "args": [
-    "@return tag requires an argument at line 5", 
-    []
+    "@return tag requires an argument at line 5"
   ], 
   "exception_type": "<type 'exceptions.RuntimeError'>", 
   "stack": [
