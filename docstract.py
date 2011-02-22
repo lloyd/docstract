@@ -623,6 +623,8 @@ class PropertyBlockHandler(ParamTagHandler, BlockHandler):
     def merge(self, doc, parent, guessedName):
         if "name" not in doc:
             doc['name'] = guessedName
+        if doc["name"] == None:
+            raise RuntimeError("can't determine property name")
         if not "properties" in parent:
             parent["properties"] = []
         for p in parent["properties"]:
