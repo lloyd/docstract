@@ -1,0 +1,28 @@
+{
+  "filename": "tests/guess_obj_property.js", 
+  "functions": [
+    {
+      "desc": "Closes both the stream and its backing stream.  If the stream is already\nclosed, an exception is thrown.  For TextWriters, this first flushes the\nbacking stream's buffer.", 
+      "name": "close", 
+      "source_lines": [
+        4, 
+        8
+      ]
+    }, 
+    {
+      "desc": "Writes a string to the stream.  If the stream is closed, an exception is\nthrown.", 
+      "name": "write", 
+      "params": [
+        {
+          "desc": "The string to write.", 
+          "name": "str"
+        }
+      ], 
+      "source_lines": [
+        14, 
+        20
+      ]
+    }
+  ], 
+  "module": "guess_obj_property"
+}

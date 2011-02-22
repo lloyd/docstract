@@ -97,7 +97,8 @@ class DocStract():
             standardFunctionNameGuesser,
             getSetterNameGuesser,
             objectPropertyNameGuesser,
-            commonJSNameGuesser
+            commonJSNameGuesser,
+            assignToPropertyNameGuesser
             ]
 
         # a little bit of context that allows us to understand when we're parsing classes
@@ -672,6 +673,16 @@ def hasGetSetterIsPropertyTypeGuesser(firstBlock, codeChunk, context, tags, poss
 _findExportsPat = re.compile('(?:^|\s)exports\.(\w+)\s', re.M);
 def commonJSNameGuesser(codeChunk, blockType):
     m = _findExportsPat.search(codeChunk)
+    if m:
+        return m.group(1)
+    return None
+
+# A name guesser that catches assignment to properties and guesses the name based
+# on that.  like `this.foo` or `stream.bar`.  Very general, but requires rooting
+# at the beginning of line, whereas exports guesser does not
+_findPropPat = re.compile('^\s*\w+\.(\w+)\s*=', re.M);
+def assignToPropertyNameGuesser(codeChunk, blockType):
+    m = _findPropPat.search(codeChunk)
     if m:
         return m.group(1)
     return None
