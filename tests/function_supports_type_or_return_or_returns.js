@@ -18,5 +18,6 @@
 /**
  * @function toFilename3
  * a function which converts URLs to filenames
- * @type {string} Yeah, A String.
+ * @return Yeah, A String.
+ * @type {string}
  */

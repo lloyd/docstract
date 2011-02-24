@@ -22,10 +22,6 @@
     ], 
     [
       "attach", 
-      "ReturnTagHandler.attach(self, obj, current, blockType)"
-    ], 
-    [
-      "attach", 
       "\"same function block?)\")"
     ]
   ]

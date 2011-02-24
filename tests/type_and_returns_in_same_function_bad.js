@@ -5,5 +5,5 @@
  * @function foo
  * But having both @@type and @@return is bogus.
  * @returns {string} This is the first return type.
- * @type {boolean} This is the second one.
+ * @type {boolean}
  */

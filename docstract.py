@@ -35,10 +35,23 @@ class DocStract():
         # blocks.
         self.unescapeTagPat = re.compile('@@(?=\w+)', re.M)
 
-        # the pattern used to split a comment block to create our token stream
-        # this will currently break if there are ampersands in the comments if there
-        # is a space before it
-        self.tokenizePat = re.compile('(?<![@\w])(@\w+)', re.M);
+        # the pattern used to split a comment block to create our token stream.
+        # The token stream consists of:
+        #   * tags: "@tagname"
+        #   * types: "{typename [optional text content]}
+        #   * text: "freeform text that's not either of the above"
+        #
+        # This pattern checks for either of the top two, and is applied using
+        # .split() which handles the third.
+        self.tokenizePat = re.compile(r'''
+             (?:
+               (?<![@\w]) (@\w+) # a tag that's not preceeded by an @ sign (escape)
+             )
+             |
+             (?:
+               (?<!\\) ({\w+})
+             )
+          ''', re.M | re.X);
 
         # block types.  Each document block is of one of these types.
         self.blockTypes = {
@@ -138,18 +151,23 @@ class DocStract():
         elif cur in self.tags:
             handler = self.tags[cur]
 
+        # now let's gather together all the arguments (non-tags)
+        args = [ ]
+        while len(tokens) > 0 and not self._isMarker(self._peekTok(tokens)):
+            args.append(tokens.pop(0))
+
         # do we have a handler for this tag?
         if not handler == None:
             arg = None
 
             # get argument if required
             if handler.takesArg:
-                arg = self._popNonMarker(tokens)
-
-                if arg == None and not handler.argOptional:
+                if len(args) == 0 and not handler.argOptional:
                     raise RuntimeError("%s tag requires an argument" % cur)
+            elif not len(args) == 0:
+                raise RuntimeError("no arguments allowed to %s tag" % cur)
 
-            ctx = handler.parse(arg)
+            ctx = handler.parse(args)
 
             if handler.mayRecur:
                 if cur not in currentObj["tagData"]:
@@ -218,6 +236,7 @@ class DocStract():
         # whitespace on either side of tokens is stripped.  Also, unescape
         # @@tags.
         tokens = self.tokenizePat.split(block)
+        tokens = [n for n in tokens if not n == None]
         tokens = [n.lstrip(" \t").lstrip('\r\n').rstrip() for n in tokens if n.strip()]
         tokens = [self.unescapeTagPat.sub("@", t) for t in tokens]
 
@@ -250,7 +269,7 @@ class DocStract():
         # only invoke guessing logic if type wasn't explicitly declared
         if parseData['blockHandler'] == None:
             guessedType = self._guessBlockType(firstBlock, codeChunk, thisContext, parseData['tagData'].keys())
-        
+
             if guessedType not in self.blockTypes:
                 raise RuntimeError("Don't know how to handle a '%s' documentation block" % guessedType)
             parseData['blockHandler'] = self.blockTypes[guessedType]
@@ -379,8 +398,8 @@ class TagHandler(object):
     # any representation of it that it likes.  This method should throw
     # if there's a syntactic error in the text argument.  text may be
     # 'None' if the tag accepts no argument.
-    def parse(self, text):
-        return text
+    def parse(self, args):
+        return " ".join(args) if len(args) > 0 else None
 
     # attach merges the results of parsing a tag into the output
     # JSON document for a documentation block. `obj` is the value
@@ -389,45 +408,56 @@ class TagHandler(object):
     def attach(self, obj, parent, blockType):
         parent[self.tagName[1:]] = obj
 
+    # utility function for determining if an argument is a type
+    def _isType(self, arg):
+        return len(arg) >= 2 and arg[0:1] == '{' and arg[-1:] == '}'
+
+
+
 class ParamTagHandler(TagHandler):
     mayRecur = True
     takesArg = True
 
-    # We support three forms:
-    #   @property <name> <{type}> [description]
-    #   @property <{type}> <name> [description]
-    #   @property [name]
-    #   [description]
-    _pat = re.compile(
-        '(?:^([\w.\[\]]+)\s*(?:{(\w+)})\s*(.*)$)|' +
-        '(?:^{(\w+)}\s*([\w.\[\]]+)\s*(.*)$)|' +
-        '(?:^([\w.\[\]]+)?\s*(.*)$)',
-        re.S);
+    _nameAndDescPat = re.compile('^([\w.\[\]]+)?\s*(.*)$', re.S);
 
     # a pattern used to detect & strip optional brackets
     _optionalPat = re.compile('^\[(.*)\]$')
 
-    def parse(self, text):
-        m = self._pat.match(text)
-        if not m:
-            raise RuntimeError("Malformed args to %s: %s" %
-                                   (tag, (text[:20] + "...")))
+    def parse(self, args):
         p = { }
-        if m.group(1):
-            p['name'] = m.group(1)
-            p['type'] = m.group(2)
-            if m.group(3):
-                p['desc'] = m.group(3)
-        elif m.group(4):
-            p['type'] = m.group(4)
-            p['name'] = m.group(5)
-            if m.group(6):
-                p['desc'] = m.group(6)
+        # collapse two arg case into one arg
+        if (len(args) == 2 and self._isType(args[0])):
+            p['type'] = args[0][1:-1]
+            args = args[1:]
+
+        if len(args) == 1:
+            m = self._nameAndDescPat.match(args[0])
+            if not m or self._isType(args[0]):
+                raise RuntimeError("Malformed args to %s: %s" %
+                                   (self.tagName, (args[0][:20] + "...")))
+            if m.group(1):
+                p['name'] = m.group(1)
+            if m.group(2):
+                p['desc'] = m.group(2)
+        elif len(args) == 2:
+            # @param name {type}
+            if self._isType(args[0]) or not self._isType(args[1]):
+                raise RuntimeError("Malformed args to %s: %s" %
+                                   (self.tagName, (" ".join(args)[:20] + "...")))
+            p['name'] = args[0]
+            p['type'] = args[1][1:-1]
+        elif len(args) == 3:
+            # this is
+            # @param name {type} desc
+            if self._isType(args[0]) or not self._isType(args[1]) or self._isType(args[2]):
+                raise RuntimeError("Malformed args to %s: %s" %
+                                   (self.tagName, (" ".join(args)[:20] + "...")))
+            p['name'] = args[0]
+            p['type'] = args[1][1:-1]
+            p['desc'] = args[2]
         else:
-            if m.group(7):
-                p['name'] = m.group(7)
-            if m.group(8):
-                p['desc'] = m.group(8)
+            raise RuntimeError("Malformed args to %s: %s" %
+                               (self.tagName, (" ".join(args)[:20] + "...")))
         return p
 
     def attach(self, obj, current, blockType):
@@ -462,24 +492,19 @@ class DescTagHandler(TagHandler):
 class ReturnTagHandler(TagHandler):
     takesArg = True
     _pat = re.compile('^\s*(?:{(\w+)})?\s*(.*)$', re.S);
-    _isWordPat = re.compile('^\w+$', re.S);
 
-    def parse(self, text):
-        m = self._pat.match(text)
+    def parse(self, args):
         rv = { }
-        if m:
-            if m.group(1):
-                rv['type'] = m.group(1)
-            if m.group(2):
-                # If the match is a single word, assume it's a
-                # typename
-                if self._isWordPat.match(m.group(2)):
-                    rv['type'] = m.group(2)
-                else:
-                    rv['desc'] = m.group(2)
-        else:
-            raise RuntimeError("Malformed args to %s: %s" %
-                               (self.tagName, (text[:20] + "...")))
+        for a in args:
+            if self._isType(a):
+                if 'type' in rv:
+                    raise RuntimeError("Return type multiply decalared")
+                rv['type'] = a[1:-1]
+            else:
+                if 'desc' in rv:
+                    raise RuntimeError("Bogus arguments to %s: %s" %
+                                       (self.tagName, (" ".join(args)[:20] + "...")))
+                rv['desc'] = a
 
         return rv
 
@@ -498,19 +523,38 @@ class ReturnTagHandler(TagHandler):
         for k in obj:
             current['returns'][k] = obj[k]
 
-class TypeTagHandler(ReturnTagHandler):
+class TypeTagHandler(TagHandler):
+    takesArg = True
+
+    _isWordPat = re.compile('^\w+$', re.S);
+
+    def parse(self, args):
+        if len(args) > 1:
+            raise RuntimeError("Bogus arguments to %s: %s" %
+                               (self.tagName, (" ".join(args)[:20] + "...")))
+        m = self._isWordPat.match(args[0])
+        if self._isType(args[0]):
+            args[0] = args[0][1:-1]
+        elif not m:
+            raise RuntimeError("Bogus argument to %s: %s" % (self.tagName, args[0]))
+
+        return args[0]
+
+
     # type is special.  it means different things
     # when it occurs in a '@property' vs. a '@function'
     # context.  in the former it's the property type, in
     # the later, it's an alias for '@return'
     def attach(self, obj, current, blockType):
         if (blockType == '@property'):
-            if 'desc' in obj or 'type' not in obj:
-                raise RuntimeError("Malformed args to %s: %s" %
-                                   (self.tagName, (obj['desc'][:20] + "...")))
-            current['type'] = obj["type"]
+            current['type'] = obj
         else:
-            ReturnTagHandler.attach(self, obj, current, blockType)
+            if 'returns' not in current:
+                current['returns'] = { }
+            if 'type' in current['returns']:
+                raise RuntimeError("Return type redefined (@type and @returns in " +
+                                   "same function block?)")
+            current['returns']['type'] = obj
 
 class ThrowsTagHandler(ReturnTagHandler):
     mayRecur = True
@@ -545,7 +589,11 @@ class ModuleBlockHandler(BlockHandler):
     allowedContexts = [ 'global' ]
     takesArg = True
     _pat = re.compile('^(\w+)$|^(?:([\w.\[\]]+)\s*\n)?\s*(.*)$', re.S);
-    def parse(self, text):
+    def parse(self, args):
+        if len(args) != 1:
+            raise RuntimeError("You may not pass args (like, {string}) to %s" % 
+                               self.tagName)
+        text = args[0]
         m = self._pat.match(text)
         if not m:
             raise RuntimeError("Malformed args to %s: %s" %
