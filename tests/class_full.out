@@ -11,7 +11,8 @@
           }, 
           {
             "desc": "A optional base url which will be used to resolve the\n`url` argument if it is a relative url.", 
-            "name": "[base]", 
+            "name": "base", 
+            "optional": true, 
             "type": "string"
           }
         ], 

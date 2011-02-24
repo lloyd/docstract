@@ -404,6 +404,9 @@ class ParamTagHandler(TagHandler):
         '(?:^([\w.\[\]]+)?\s*(.*)$)',
         re.S);
 
+    # a pattern used to detect & strip optional brackets
+    _optionalPat = re.compile('^\[(.*)\]$')
+
     def parse(self, text):
         m = self._pat.match(text)
         if not m:
@@ -428,6 +431,13 @@ class ParamTagHandler(TagHandler):
         return p
 
     def attach(self, obj, current, blockType):
+        # handle optional syntax: [name]
+        if ('name' in obj):
+            m = self._optionalPat.match(obj['name'])
+            if m:
+                obj['name'] = m.group(1)
+                obj['optional'] = True
+
         if not 'params' in current:
             current['params'] = [ ]
         current['params'].append(obj)
@@ -574,7 +584,7 @@ class FunctionBlockHandler(ModuleBlockHandler):
         if "name" not in doc:
             doc['name'] = guessedName
         if doc['name'] == None:
-            raise RuntimeError("can't determine function name")                
+            raise RuntimeError("can't determine function name")
         if not "functions" in parent:
             parent["functions"] = []
         for f in parent["functions"]:
