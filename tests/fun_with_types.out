@@ -1,0 +1,33 @@
+{
+  "filename": "tests/fun_with_types.js", 
+  "module": "fun_with_types", 
+  "properties": [
+    {
+      "desc": "This is an array of strings", 
+      "name": "arrayOfStrings", 
+      "source_lines": [
+        1, 
+        4
+      ], 
+      "type": "array of strings"
+    }, 
+    {
+      "desc": "This is an another array of strings", 
+      "name": "arrayOfStrings2", 
+      "source_lines": [
+        7, 
+        10
+      ], 
+      "type": "strings[]"
+    }, 
+    {
+      "desc": "This is a *third* array of strings", 
+      "name": "arrayOfStrings3", 
+      "source_lines": [
+        13, 
+        16
+      ], 
+      "type": "Strings [ ]"
+    }
+  ]
+}
