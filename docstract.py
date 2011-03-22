@@ -534,7 +534,7 @@ class TypeTagHandler(TagHandler):
                                (self.tagName, (" ".join(args)[:20] + "...")))
         m = self._isWordPat.match(args[0])
         if self._isType(args[0]):
-            args[0] = args[0][1:-1]
+            args[0] = args[0][1:-1].strip()
         elif not m:
             raise RuntimeError("Bogus argument to %s: %s" % (self.tagName, args[0]))
 
