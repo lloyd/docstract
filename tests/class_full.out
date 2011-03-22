@@ -1,31 +1,33 @@
 {
   "classes": [
     {
-      "constructor": {
-        "desc": "The URL constructor creates an object that represents a URL,  verifying that\nthe provided string is a valid URL in the process.", 
-        "params": [
-          {
-            "desc": "A string to be converted into a URL.", 
-            "name": "url", 
-            "type": "string"
-          }, 
-          {
-            "desc": "A optional base url which will be used to resolve the\n`url` argument if it is a relative url.", 
-            "name": "base", 
-            "optional": true, 
-            "type": "string"
-          }
-        ], 
-        "source_lines": [
-          24, 
-          35
-        ], 
-        "throws": [
-          {
-            "desc": "If `source` is not a valid URI."
-          }
-        ]
-      }, 
+      "constructors": [
+        {
+          "desc": "The URL constructor creates an object that represents a URL,  verifying that\nthe provided string is a valid URL in the process.", 
+          "params": [
+            {
+              "desc": "A string to be converted into a URL.", 
+              "name": "url", 
+              "type": "string"
+            }, 
+            {
+              "desc": "A optional base url which will be used to resolve the\n`url` argument if it is a relative url.", 
+              "name": "base", 
+              "optional": true, 
+              "type": "string"
+            }
+          ], 
+          "source_lines": [
+            24, 
+            35
+          ], 
+          "throws": [
+            {
+              "desc": "If `source` is not a valid URI."
+            }
+          ]
+        }
+      ], 
       "desc": "A class which parses a url and exposes its various\ncomponents separately.", 
       "functions": [
         {

@@ -3,7 +3,7 @@
     {
       "constructors": [
         {
-          "desc": "This is the constructor of the class", 
+          "desc": "This is the first constructor of the class", 
           "params": [
             {
               "desc": "it accepts a bar argument of type foo", 
@@ -13,10 +13,17 @@
           ], 
           "source_lines": [
             11, 
-            16
+            17
+          ]
+        },
+        {
+          "desc": "This is the second (no-arg) constructor of the class", 
+          "source_lines": [
+            18,
+            22
           ]
         }
-      ], 
+      ],
       "desc": "A class which parses a url and exposes its various\ncomponents separately.", 
       "name": "URL", 
       "source_lines": [
@@ -26,8 +33,8 @@
     }
   ], 
   "desc": "A test of basic class parsing", 
-  "filename": "tests/class_with_constructor.js", 
-  "module": "class_with_constructor", 
+  "filename": "tests/class_with_constructors.js", 
+  "module": "class_with_constructors", 
   "source_lines": [
     1, 
     4

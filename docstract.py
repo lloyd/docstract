@@ -653,7 +653,9 @@ class ConstructorBlockHandler(BlockHandler):
             current['desc'] = obj
 
     def merge(self, doc, parent, guessedName):
-        parent["constructor"] = doc
+        if not "constructors" in parent:
+            parent["constructors"] = []
+        parent["constructors"].append(doc)
 
 class ClassBlockHandler(FunctionBlockHandler):
     allowedTags = [ '@see', '@desc' ]
