@@ -1,6 +1,6 @@
 {
   "args": [
-    "Return type redefined (@type and @returns in same function block?) at line 4"
+    "@typedef not allowed in global context at line 3"
   ], 
   "exception_type": "<type 'exceptions.RuntimeError'>", 
   "stack": [
@@ -18,11 +18,7 @@
     ], 
     [
       "_analyzeBlock", 
-      "handler.attach(v, doc, parseData['blockHandler'].tagName)"
-    ], 
-    [
-      "attach", 
-      "\"same function block?)\")"
+      "thisContext))"
     ]
   ]
 }

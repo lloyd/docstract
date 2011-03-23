@@ -1,0 +1,45 @@
+{
+  "classes": [
+    {
+      "classes": [
+        {
+          "constructors": [
+            {
+              "desc": "bar's constructor!", 
+              "source_lines": [
+                7, 
+                8
+              ]
+            }
+          ], 
+          "name": "Bar", 
+          "source_lines": [
+            6, 
+            6
+          ]
+        }
+      ], 
+      "constructors": [
+        {
+          "desc": "foo's constructor!", 
+          "source_lines": [
+            4, 
+            5
+          ]
+        }
+      ], 
+      "name": "Foo", 
+      "source_lines": [
+        3, 
+        3
+      ]
+    }
+  ], 
+  "desc": "Simple test of nested class support", 
+  "filename": "tests/class_simple_nested.js", 
+  "module": "class_simple_nested", 
+  "source_lines": [
+    1, 
+    2
+  ]
+}

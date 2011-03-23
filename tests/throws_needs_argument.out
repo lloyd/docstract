@@ -14,7 +14,7 @@
     ], 
     [
       "extract", 
-      "self._analyzeBlock(block, context, firstBlock, data, lineStart, line)"
+      "self._analyzeBlock(block, context, firstBlock, stack, lineStart, line)"
     ], 
     [
       "_analyzeBlock", 

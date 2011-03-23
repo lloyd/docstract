@@ -1,6 +1,6 @@
 {
   "args": [
-    "class 'Foo' redefined at line 5"
+    "class 'Foo' redefined at line 6"
   ], 
   "exception_type": "<type 'exceptions.RuntimeError'>", 
   "stack": [
@@ -14,11 +14,11 @@
     ], 
     [
       "extract", 
-      "self._analyzeBlock(block, context, firstBlock, data, lineStart, line)"
+      "self._analyzeBlock(block, context, firstBlock, stack, lineStart, line)"
     ], 
     [
       "_analyzeBlock", 
-      "parseData['blockHandler'].merge(doc, data, guessedName)"
+      "parseData['blockHandler'].merge(doc, stack[-1][1], guessedName, self._whatContext(stack))"
     ], 
     [
       "merge", 
