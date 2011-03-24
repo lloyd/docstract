@@ -254,13 +254,6 @@ class DocStract():
         tokens = [n.lstrip(" \t").lstrip('\r\n').rstrip() for n in tokens if n.strip()]
         tokens = [self.unescapeTagPat.sub("@", t) for t in tokens]
 
-        # Step 2: initialize an object which will hold the intermediate
-        # representation of parsed block data.
-        parseData = {
-            'blockHandler': None,
-            'tagData': { }
-            }
-
         # Step 3: Treat initial text as if it were a description. 
         if not self._isMarker(tokens[0]):
             tokens.insert(0, '@desc')
@@ -268,86 +261,109 @@ class DocStract():
         # Step 4: collapse aliases
         tokens = [self.aliases[n] if self.aliases.has_key(n) else n for n in tokens]
 
-        # Step 4.5: depth first recursion for inline type parsing
-        newtoks = []
-        for t in tokens:
-            if len(t) >= 2 and t[0:1] == '{' and t[-1:] == '}':
-                stack.append( ('embedded', {}) )
-                tokObj = { }
-                t = "@typedef " + t[1:-1]
-                self._analyzeBlock(t, codeChunk, False, stack, lineStart, lineEnd)
-                self._analyzeBlock("@endtypedef", codeChunk, False, stack, lineStart, lineEnd)
-                newtoks.append(DocStract.Type(stack[-1][1]['val']))
-                stack.pop()
-            else:
-                newtoks.append(t)
-        tokens = newtoks
-
-        # Step 5: parse all tokens from the token stream, populating the
-        # output representation as we go.
+        # "autosplitting".  this feature allows multiple blocks to reside in the
+        # same documentation block (/** */)
+        tokenGroups = []
         while len(tokens):
-            self._consumeToks(tokens, parseData)
+            i = 1
+            while i < len(tokens):
+                print ">>%s<<" % tokens[i]
+                if (tokens[i] in self.blockTypes):
+                    break
+                i += 1
+            tokenGroups.append(tokens[:i])
+            tokens = tokens[i:]
 
-        thisContext = self._whatContext(stack)
+        print "%d token groups" % len(tokenGroups)
+        print tokenGroups
 
-        # Step 6: Heuristics!  Apply a set of functions which use the current state of
-        #         documentation extractor and some source code to figure out what
-        #         type of construct  (@function, @property, etc) this documentation
-        #         block is documenting, and what its name is.
+        for tokens in tokenGroups:
+            # Step 2: initialize an object which will hold the intermediate
+            # representation of parsed block data.
+            parseData = {
+                'blockHandler': None,
+                'tagData': { }
+                }
 
-        # only invoke guessing logic if type wasn't explicitly declared
-        if parseData['blockHandler'] == None:
-            guessedType = self._guessBlockType(firstBlock, codeChunk, thisContext, parseData['tagData'].keys())
+            # Step 4.5: depth first recursion for inline type parsing
+            newtoks = []
+            for t in tokens:
+                if len(t) >= 2 and t[0:1] == '{' and t[-1:] == '}':
+                    stack.append( ('embedded', {}) )
+                    tokObj = { }
+                    t = "@typedef " + t[1:-1]
+                    self._analyzeBlock(t, codeChunk, False, stack, lineStart, lineEnd)
+                    self._analyzeBlock("@endtypedef", codeChunk, False, stack, lineStart, lineEnd)
+                    newtoks.append(DocStract.Type(stack[-1][1]['val']))
+                    stack.pop()
+                else:
+                    newtoks.append(t)
+            tokens = newtoks
 
-            if guessedType not in self.blockTypes:
-                raise RuntimeError("Don't know how to handle a '%s' documentation block" % guessedType)
-            parseData['blockHandler'] = self.blockTypes[guessedType]
+            # Step 5: parse all tokens from the token stream, populating the
+            # output representation as we go.
+            while len(tokens):
+                self._consumeToks(tokens, parseData)
 
-        # always try to guess the name, a name guesser has the first interesting line of code
-        # after the documentation block and the type of block (it's string name) to work with
-        guessedName = self._guessBlockName(codeChunk, parseData['blockHandler'].tagName)
+            thisContext = self._whatContext(stack)
 
-        # Step 7: Validation phase!  Not all tags are allowed in all types of
-        # documentation blocks.  like '@returns' inside a '@classend' block
-        # would just be nutty.  let's scrutinize this block to make sure it's
-        # sane.
+            # Step 6: Heuristics!  Apply a set of functions which use the current state of
+            #         documentation extractor and some source code to figure out what
+            #         type of construct  (@function, @property, etc) this documentation
+            #         block is documenting, and what its name is.
 
-        # first check that this doc block type is valid in present context
-        if thisContext not in parseData['blockHandler'].allowedContexts:
-            raise RuntimeError("%s not allowed in %s context" %
-                               (parseData['blockHandler'].tagName,
-                                thisContext))
+            # only invoke guessing logic if type wasn't explicitly declared
+            if parseData['blockHandler'] == None:
+                guessedType = self._guessBlockType(firstBlock, codeChunk, thisContext, parseData['tagData'].keys())
 
-        # now check that all present tags are allowed in this block
-        for tag in parseData['tagData']:
-            if not tag == parseData['blockHandler'].tagName and tag not in parseData['blockHandler'].allowedTags:
-                raise RuntimeError("%s not allowed in %s block" %
-                                   (tag, parseData['blockHandler'].tagName))
+                if guessedType not in self.blockTypes:
+                    raise RuntimeError("Don't know how to handle a '%s' documentation block" % guessedType)
+                parseData['blockHandler'] = self.blockTypes[guessedType]
 
-        # Step 8: Generation of output document
-        doc = { }
+            # always try to guess the name, a name guesser has the first interesting line of code
+            # after the documentation block and the type of block (it's string name) to work with
+            guessedName = self._guessBlockName(codeChunk, parseData['blockHandler'].tagName)
 
-        for tag in parseData['tagData']:
-            val = parseData['tagData'][tag]
-            if not type(val) == types.ListType:
-                val = [ val ]
-            for v in val:
-                handler = self.tags[tag] if tag in self.tags else self.blockTypes[tag]
-                handler.attach(v, doc, parseData['blockHandler'].tagName)
+            # Step 7: Validation phase!  Not all tags are allowed in all types of
+            # documentation blocks.  like '@returns' inside a '@classend' block
+            # would just be nutty.  let's scrutinize this block to make sure it's
+            # sane.
 
-        parseData['blockHandler'].setLineNumber(lineStart, lineEnd, doc)
+            # first check that this doc block type is valid in present context
+            if thisContext not in parseData['blockHandler'].allowedContexts:
+                raise RuntimeError("%s not allowed in %s context" %
+                                   (parseData['blockHandler'].tagName,
+                                    thisContext))
 
-        # special case for classes and typedefs
-        if parseData['blockHandler'].tagName in ('@endclass', '@endtypedef'):
-            doc = stack.pop()[1]
+            # now check that all present tags are allowed in this block
+            for tag in parseData['tagData']:
+                if not tag == parseData['blockHandler'].tagName and tag not in parseData['blockHandler'].allowedTags:
+                    raise RuntimeError("%s not allowed in %s block" %
+                                       (tag, parseData['blockHandler'].tagName))
 
-        parseData['blockHandler'].merge(doc, stack[-1][1], guessedName, self._whatContext(stack))
+            # Step 8: Generation of output document
+            doc = { }
 
-        if parseData['blockHandler'].tagName == '@class':
-            stack.append( ('class', doc) )
-        elif parseData['blockHandler'].tagName == '@typedef':
-            stack.append( ('type', doc) )
+            for tag in parseData['tagData']:
+                val = parseData['tagData'][tag]
+                if not type(val) == types.ListType:
+                    val = [ val ]
+                for v in val:
+                    handler = self.tags[tag] if tag in self.tags else self.blockTypes[tag]
+                    handler.attach(v, doc, parseData['blockHandler'].tagName)
 
+            parseData['blockHandler'].setLineNumber(lineStart, lineEnd, doc)
+
+            # special case for classes and typedefs
+            if parseData['blockHandler'].tagName in ('@endclass', '@endtypedef'):
+                doc = stack.pop()[1]
+
+            parseData['blockHandler'].merge(doc, stack[-1][1], guessedName, self._whatContext(stack))
+
+            if parseData['blockHandler'].tagName == '@class':
+                stack.append( ('class', doc) )
+            elif parseData['blockHandler'].tagName == '@typedef':
+                stack.append( ('type', doc) )
 
     def extractFromFile(self, filename):
         # next read the whole file into memory
@@ -719,7 +735,6 @@ class TypedefBlockHandler(FunctionBlockHandler):
 
     def merge(self, doc, parent, guessedName, context):
         parent['val'] = doc
-
 
 class EndTypedefBlockHandler(BlockHandler):
     allowedContexts = [ 'type' ]
