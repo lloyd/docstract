@@ -267,15 +267,11 @@ class DocStract():
         while len(tokens):
             i = 1
             while i < len(tokens):
-                print ">>%s<<" % tokens[i]
                 if (tokens[i] in self.blockTypes):
                     break
                 i += 1
             tokenGroups.append(tokens[:i])
             tokens = tokens[i:]
-
-        print "%d token groups" % len(tokenGroups)
-        print tokenGroups
 
         for tokens in tokenGroups:
             # Step 2: initialize an object which will hold the intermediate
@@ -657,6 +653,17 @@ class ModuleBlockHandler(BlockHandler):
             if "desc" in current:
                 obj['desc'] = current['desc'] + "\n\n" + obj['desc']
             current['desc'] = obj['desc']
+
+    def merge(self, doc, parent, guessedName, context):
+        # first fields that we wish to not overwrite
+        for f in doc:
+            if f == 'desc':
+                parent['desc'] = parent['desc'] + "\n\n" + doc['desc'] if 'desc' in parent else doc['desc']
+            elif f == "module":
+                parent['module'] = doc['module']
+            elif (f in doc and f not in parent):
+                parent[f] = doc[f]
+
 
 class FunctionBlockHandler(ModuleBlockHandler):
     allowedTags = [ '@see', '@param', '@return', '@throws', '@desc', '@type' ]
