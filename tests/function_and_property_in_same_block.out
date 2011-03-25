@@ -1,28 +1,27 @@
 {
-  "args": [
-    "@function and @property may not occur in same documentation block at line 4"
+  "desc": "You can have a single docblock that's both a function\nAND a property, and they'll be automagically split into\ntwo separate blocks", 
+  "filename": "tests/function_and_property_in_same_block.js", 
+  "functions": [
+    {
+      "name": "foo", 
+      "source_lines": [
+        5, 
+        5
+      ]
+    }
   ], 
-  "exception_type": "<type 'exceptions.RuntimeError'>", 
-  "stack": [
-    [
-      "<module>", 
-      "got = ds.extractFromFile(os.path.join(testDir, test + \".js\"))"
-    ], 
-    [
-      "extractFromFile", 
-      "data = self.extract(contents)"
-    ], 
-    [
-      "extract", 
-      "self._analyzeBlock(block, context, firstBlock, stack, lineStart, line)"
-    ], 
-    [
-      "_analyzeBlock", 
-      "self._consumeToks(tokens, parseData)"
-    ], 
-    [
-      "_consumeToks", 
-      "\"not occur in same documentation block\")"
-    ]
+  "module": "function_and_property_in_same_block", 
+  "properties": [
+    {
+      "name": "bar", 
+      "source_lines": [
+        5, 
+        5
+      ]
+    }
+  ], 
+  "source_lines": [
+    1, 
+    4
   ]
 }
