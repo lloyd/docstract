@@ -552,7 +552,7 @@ class ReturnTagHandler(TagHandler):
             else:
                 if 'desc' in rv:
                     raise RuntimeError("Bogus arguments to %s: %s" %
-                                       (self.tagName, (" ".join(args)[:20] + "...")))
+                                       (self.tagName, self._argPrint(args)))
                 rv['desc'] = a
 
         return rv
@@ -580,7 +580,7 @@ class TypeTagHandler(TagHandler):
     def parse(self, args):
         if len(args) > 1:
             raise RuntimeError("Bogus arguments to %s: %s" %
-                               (self.tagName, (" ".join(args)[:20] + "...")))
+                               (self.tagName, self._argPrint(args)))
         if self._isType(args[0]):
             args[0] = args[0].value.strip()
         else:
