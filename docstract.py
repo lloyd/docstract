@@ -20,12 +20,16 @@ import types
 
 class DocStract():
     class Type():
-        def __init__(self, val):
+        def __init__(self, val, orig):
             val.pop('source_lines')
             if (val.has_key('name') and len(val) == 1):
                 self.value = val['name']
             else:
                 self.value = val
+            self.orig = orig
+
+        def __repr__(self):
+            return self.orig
 
     def __init__(self):
         # the patterns for finding and processing documentation blocks (and the source line
@@ -60,9 +64,9 @@ class DocStract():
                (?<!\\)
                ({
                  (?:[^{}]+|
-                   ({
+                   (?:{
                      (?:[^{}]+|
-                       ({[^{}]}) # a regex is the wrong tool for the job, support
+                       (?:{[^{}]}) # a regex is the wrong tool for the job, support
                                  # 3 levels of nested curlies.
                      )*
                    })
@@ -250,6 +254,7 @@ class DocStract():
         # whitespace on either side of tokens is stripped.  Also, unescape
         # @@tags.
         tokens = self.tokenizePat.split(block)
+
         tokens = [n for n in tokens if not n == None]
         tokens = [n.lstrip(" \t").lstrip('\r\n').rstrip() for n in tokens if n.strip()]
         tokens = [self.unescapeTagPat.sub("@", t) for t in tokens]
@@ -274,6 +279,7 @@ class DocStract():
             tokens = tokens[i:]
 
         for tokens in tokenGroups:
+
             # Step 2: initialize an object which will hold the intermediate
             # representation of parsed block data.
             parseData = {
@@ -287,10 +293,10 @@ class DocStract():
                 if len(t) >= 2 and t[0:1] == '{' and t[-1:] == '}':
                     stack.append( ('embedded', {}) )
                     tokObj = { }
-                    t = "@typedef " + t[1:-1]
-                    self._analyzeBlock(t, codeChunk, False, stack, lineStart, lineEnd)
+                    t2 = "@typedef " + t[1:-1]
+                    self._analyzeBlock(t2, codeChunk, False, stack, lineStart, lineEnd)
                     self._analyzeBlock("@endtypedef", codeChunk, False, stack, lineStart, lineEnd)
-                    newtoks.append(DocStract.Type(stack[-1][1]['val']))
+                    newtoks.append(DocStract.Type(stack[-1][1]['val'], t))
                     stack.pop()
                 else:
                     newtoks.append(t)
@@ -450,6 +456,10 @@ class TagHandler(object):
     def _isType(self, arg):
         return isinstance(arg, DocStract.Type)
 
+    # utility function for rendering arguments
+    def _argPrint(self, args):
+        return ("(" + str(len(args)) + "): ") + " | ".join([str(x)[:10] for x in args])[:40] + "..."
+
 
 class ParamTagHandler(TagHandler):
     mayRecur = True
@@ -461,6 +471,7 @@ class ParamTagHandler(TagHandler):
     _optionalPat = re.compile('^\[(.*)\]$')
 
     def parse(self, args):
+
         p = { }
         # collapse two arg case into one arg
         if (len(args) == 2 and self._isType(args[0])):
@@ -471,7 +482,7 @@ class ParamTagHandler(TagHandler):
             m = self._nameAndDescPat.match(args[0])
             if not m or self._isType(args[0]):
                 raise RuntimeError("Malformed args to %s: %s" %
-                                   (self.tagName, (args[0][:20] + "...")))
+                                   (self.tagName, self._argPrint(args)))
             if m.group(1):
                 p['name'] = m.group(1)
             if m.group(2):
@@ -480,7 +491,7 @@ class ParamTagHandler(TagHandler):
             # @param name {type}
             if self._isType(args[0]) or not self._isType(args[1]):
                 raise RuntimeError("Malformed args to %s: %s" %
-                                   (self.tagName, (" ".join(args)[:20] + "...")))
+                                   (self.tagName, self._argPrint(args)))
             p['name'] = args[0]
             p['type'] = args[1].value
         elif len(args) == 3:
@@ -488,16 +499,16 @@ class ParamTagHandler(TagHandler):
             # @param name {type} desc
             if self._isType(args[0]) or not self._isType(args[1]) or self._isType(args[2]):
                 raise RuntimeError("Malformed args to %s: %s" %
-                                   (self.tagName, (" ".join(args)[:20] + "...")))
+                                   (self.tagName, self._argPrint(args)))
             p['name'] = args[0]
             p['type'] = args[1].value
             p['desc'] = args[2]
         else:
             raise RuntimeError("Malformed args to %s: %s" %
-                               (self.tagName, (" ".join(args)[:20] + "...")))
+                               (self.tagName, self._argPrint(args)))
         return p
 
-    def attach(self, obj, current, blockType):
+    def _handleOptionalSyntax(self, obj):
         # handle optional syntax: [name]
         if ('name' in obj):
             m = self._optionalPat.match(obj['name'])
@@ -505,6 +516,8 @@ class ParamTagHandler(TagHandler):
                 obj['name'] = m.group(1)
                 obj['optional'] = True
 
+    def attach(self, obj, current, blockType):
+        self._handleOptionalSyntax(obj)
         if not 'params' in current:
             current['params'] = [ ]
         current['params'].append(obj)
@@ -767,6 +780,10 @@ class PropertyBlockHandler(ParamTagHandler, BlockHandler):
         for p in parent["properties"]:
             if doc["name"] == p['name']:
                 raise RuntimeError("property '%s' redefined" % doc["name"])
+
+        if context == "type":
+            self._handleOptionalSyntax(doc)
+
         parent["properties"].append(doc)
 
 # A type guesser that assumes the first documentation block of a source file is
