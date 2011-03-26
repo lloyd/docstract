@@ -62,7 +62,7 @@ class DocStract():
              |
              (?:
                (?<!\\)
-               ({
+               ({\w
                  (?:[^{}]+|
                    (?:{
                      (?:[^{}]+|
@@ -254,7 +254,6 @@ class DocStract():
         # whitespace on either side of tokens is stripped.  Also, unescape
         # @@tags.
         tokens = self.tokenizePat.split(block)
-
         tokens = [n for n in tokens if not n == None]
         tokens = [n.lstrip(" \t").lstrip('\r\n').rstrip() for n in tokens if n.strip()]
         tokens = [self.unescapeTagPat.sub("@", t) for t in tokens]
@@ -443,7 +442,7 @@ class TagHandler(object):
     # if there's a syntactic error in the text argument.  text may be
     # 'None' if the tag accepts no argument.
     def parse(self, args):
-        return " ".join(args) if len(args) > 0 else None
+        return " ".join([str(a) for a in args]) if len(args) > 0 else None
 
     # attach merges the results of parsing a tag into the output
     # JSON document for a documentation block. `obj` is the value

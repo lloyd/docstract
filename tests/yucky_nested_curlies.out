@@ -1,0 +1,14 @@
+{
+  "classes": [
+    {
+      "desc": "The `Request` object is used to make `GET` or `POST` network requests. It is\nconstructed with a URL to which the request is sent. Optionally the user may\nspecify a collection of headers and content to send alongside the request and\na callback which will be executed once the request completes.\n\nOnce a `Request` object has been created a `GET` request can be executed by\ncalling its `get()` method, or a `POST` request by calling its `post()` method.\n\nWhen the server completes the request, the `Request` object emits a \"complete\"\nevent.  Registered event listeners are passed a `Response` object.\n\nEach `Request` object is designed to be used once. Once `GET` or `POST` are\ncalled, attempting to call either will throw an error.\n\nSince the request is not being made by any particular website, requests made\nhere are not subject to the same-domain restriction that requests made in web\npages are subject to.\n\nWith the exception of `response`, all of a `Request` object's properties\ncorrespond with the options in the constructor. Each can be set by simply\nperforming an assignment. However, keep in mind that the same validation rules\nthat apply to `options` in the constructor will apply during assignment. Thus,\neach can throw if given an invalid value.\n\nThe example below shows how to use Request to get the most recent public tweet.\n\n    var Request = require('request').Request;\n    var latestTweetRequest = Request({\n      url: \"http://api.twitter.com/1/statuses/public_timeline.json\",\n      onComplete: function (response) {\n        var tweet = response.json[0];\n        console.log(\"User: \" + tweet.user.screen_name);\n        console.log(\"Tweet: \" + tweet.text);\n      }\n    });\n\n    // Be a good consumer and check for rate limiting before doing more.\n    Request({\n      url: \"http://api.twitter.com/1/account/rate_limit_status.json\",\n      onComplete: function (response) {\n        if (response.json.remaining_hits) {\n          latestTweetRequest.get();\n        } else {\n          console.log(\"You have been rate limited!\");\n        }\n      }\n    }).get();", 
+      "name": "Request", 
+      "source_lines": [
+        1, 
+        52
+      ]
+    }
+  ], 
+  "filename": "tests/yucky_nested_curlies.js", 
+  "module": "yucky_nested_curlies"
+}
