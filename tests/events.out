@@ -1,0 +1,18 @@
+{
+  "events": [
+    {
+      "desc": "Allows the listener to understand approximately how much of the\npage has loaded.", 
+      "name": "progress", 
+      "payload": {
+        "desc": "The percentage (0..100) of page load that is complete", 
+        "type": "number"
+      }, 
+      "source_lines": [
+        5, 
+        10
+      ]
+    }
+  ], 
+  "filename": "tests/events.js", 
+  "module": "events"
+}

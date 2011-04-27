@@ -1,6 +1,6 @@
 {
   "args": [
-    "Can't determine what this block documents (from @function, @event, @property, @class, @module) at line 5"
+    "'progress' event redefined at line 13"
   ], 
   "exception_type": "<type 'exceptions.RuntimeError'>", 
   "stack": [
@@ -18,11 +18,11 @@
     ], 
     [
       "_analyzeBlock", 
-      "guessedType = self._guessBlockType(firstBlock, codeChunk, thisContext, parseData['tagData'].keys())"
+      "parseData['blockHandler'].merge(doc, stack[-1][1], guessedName, self._whatContext(stack))"
     ], 
     [
-      "_guessBlockType", 
-      "raise RuntimeError(\"Can't determine what this block documents (from %s)\" % \", \".join(possibilities))"
+      "merge", 
+      "raise RuntimeError(\"'%s' event redefined\" % doc[\"name\"])"
     ]
   ]
 }
